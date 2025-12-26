@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>POS بقالة</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{margin:0;font-family:Tahoma;direction:rtl;background:#f1f5f9}
+header{background:#1e3a8a;color:#fff;padding:14px;text-align:center;font-size:20px}
+button{padding:12px;border:none;border-radius:10px;font-size:16px}
+.btn{background:#1e3a8a;color:#fff;width:100%}
+.btn-success{background:#16a34a;color:#fff}
+.card{background:#fff;margin:10px;padding:10px;border-radius:10px}
+.invoice{border:1px solid #000;padding:10px;font-family:Courier New}
+.item{display:flex;justify-content:space-between;border-bottom:1px dashed #000}
+.total{font-size:20px;font-weight:bold;text-align:center}
+</style>
+</head>
+
+<body>
+
+<header>🛒 بقالة الحاج محمود</header>
+
+<div class="card">
+<input id="search" placeholder="اسم الصنف أو باركود">
+<input id="qty" type="number" value="1">
+<select id="productSelect"></select>
+<button class="btn-success" onclick="addItem()">إضافة</button>
+</div>
+
+<div class="card invoice">
+<div id="items"></div>
+<div class="total" id="total">0</div>
+<button class="btn" onclick="saveInvoice()">حفظ</button>
+</div>
+
+<script>
+let products=[
+{n:"سكر",p:20,s:50,c:"111"},
+{n:"زيت",p:70,s:30,c:"222"}
+];
+let cart=[];
+
+function renderProducts(){
+productSelect.innerHTML="";
+products.forEach((p,i)=>{
+productSelect.innerHTML+=`<option value="${i}">${p.n}</option>`;
+});
+}
+
+search.oninput=()=>{
+let v=search.value;
+let p=products.find(x=>x.c===v);
+if(p){
+productSelect.value=products.indexOf(p);
+addItem();
+search.value="";
+}
+};
+
+function addItem(){
+let i=productSelect.value;
+let q=+qty.value;
+let p=products[i];
+cart.push({n:p.n,p:p.p,q});
+renderInvoice();
+}
+
+function renderInvoice(){
+let t=0;
+items.innerHTML="";
+cart.forEach(i=>{
+t+=i.p*i.q;
+items.innerHTML+=`<div class="item"><span>${i.n} × ${i.q}</span><span>${i.p*i.q}</span></div>`;
+});
+total.innerText="الإجمالي: "+t;
+}
+
+function saveInvoice(){
+alert("تم الحفظ (نسخة اختبار)");
+cart=[];renderInvoice();
+}
+
+renderProducts();
+</script>
+
+</body>
+</html>
