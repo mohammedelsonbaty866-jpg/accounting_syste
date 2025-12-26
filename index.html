@@ -16,11 +16,6 @@
             padding: 15px;
             text-align: center;
         }
-        nav button {
-            padding: 10px;
-            margin: 5px;
-            width: 30%;
-        }
         .container {
             padding: 10px;
         }
@@ -53,9 +48,27 @@
         .hidden {
             display: none;
         }
+        nav button {
+            padding: 10px;
+            margin: 5px;
+            width: 30%;
+        }
     </style>
 </head>
 <body>
+
+<!-- شاشة الدخول -->
+<div id="login">
+    <header>🔐 تسجيل الدخول</header>
+    <div class="container">
+        <input id="password" type="password" placeholder="كلمة المرور">
+        <button onclick="login()">دخول</button>
+        <p>كلمة المرور الافتراضية: <b>1234</b></p>
+    </div>
+</div>
+
+<!-- البرنامج -->
+<div id="app" class="hidden">
 
 <header>📊 برنامج محاسبي</header>
 
@@ -99,8 +112,29 @@
     </div>
 
 </div>
+</div>
 
 <script>
+// ====== الحماية ======
+const MASTER_PASSWORD = "1234";
+
+function login() {
+    let pass = document.getElementById("password").value;
+    if (pass === MASTER_PASSWORD) {
+        localStorage.setItem("logged", "yes");
+        document.getElementById("login").classList.add("hidden");
+        document.getElementById("app").classList.remove("hidden");
+    } else {
+        alert("كلمة المرور غير صحيحة");
+    }
+}
+
+if (localStorage.getItem("logged") === "yes") {
+    document.getElementById("login").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+}
+
+// ====== المحاسبة ======
 let data = JSON.parse(localStorage.getItem("accounts")) || [];
 
 function show(section) {
