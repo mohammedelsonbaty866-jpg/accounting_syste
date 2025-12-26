@@ -6,22 +6,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body{margin:0;font-family:Tahoma;direction:rtl;background:#f1f5f9}
-header{background:#1e293b;color:#fff;padding:12px;text-align:center;font-size:18px}
+header{background:#0f172a;color:#fff;padding:12px;text-align:center;font-size:18px}
 .tabs{display:flex}
-.tabs button{flex:1;padding:12px;border:none;font-weight:bold}
+.tabs button{flex:1;padding:14px;border:none;font-weight:bold;font-size:15px}
 .active{background:#2563eb;color:#fff}
 .container{padding:10px}
-.card{background:#fff;border-radius:12px;padding:12px;
-box-shadow:0 4px 8px rgba(0,0,0,.1);margin-bottom:10px}
-input,select{width:100%;padding:10px;margin:4px 0;border-radius:8px;border:1px solid #ccc}
-button{padding:12px;border:none;border-radius:10px;font-weight:bold}
+.card{background:#fff;border-radius:14px;padding:14px;
+box-shadow:0 4px 10px rgba(0,0,0,.1);margin-bottom:10px}
+input,select{width:100%;padding:12px;margin:6px 0;border-radius:10px;border:1px solid #ccc}
+button{padding:14px;border:none;border-radius:12px;font-weight:bold;font-size:15px}
 .btn{background:#2563eb;color:#fff;width:100%}
+.btn-success{background:#16a34a;color:#fff}
 .btn-danger{background:#dc2626;color:#fff}
+.row{display:flex;gap:6px}
+.row>*{flex:1}
+.invoice{border:2px dashed #999;border-radius:10px;padding:10px;background:#fafafa}
 .item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dotted #ccc}
-.total{font-size:20px;font-weight:bold;text-align:center;color:#16a34a;margin-top:8px}
+.total{font-size:22px;font-weight:bold;text-align:center;color:#16a34a;margin-top:10px}
 .alert{color:#dc2626;font-weight:bold;text-align:center}
-.invoice{background:#fafafa;border:2px dashed #999;border-radius:10px;padding:10px}
-table{width:100%;border-collapse:collapse}
+table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{border:1px solid #ddd;padding:6px;text-align:center}
 @media print{
 body *{visibility:hidden}
@@ -33,61 +36,107 @@ body *{visibility:hidden}
 
 <body>
 
-<header>🛒 نظام بقالة</header>
+<header>🛒 بقالة الحاج محمود</header>
 
 <div class="tabs">
 <button class="active" onclick="showTab('cashier',this)">الكاشير</button>
-<button onclick="showTab('products',this)">إدارة الأصناف</button>
+<button onclick="showTab('products',this)">الأصناف</button>
+<button onclick="showTab('customers',this)">العملاء</button>
+<button onclick="showTab('reports',this)">التقارير</button>
+<button onclick="showTab('backup',this)">نسخ احتياطي</button>
 </div>
 
+<!-- ================= الكاشير ================= -->
 <div id="cashier" class="container">
+
 <div class="card">
-<input id="search" placeholder="بحث أو باركود">
+<div class="row">
+<input id="search" placeholder="بحث / باركود">
 <input id="qty" type="number" value="1" min="1">
+</div>
 <select id="productSelect"></select>
-<button class="btn" onclick="addItem()">إضافة</button>
+<button class="btn-success" onclick="addItem()">إضافة</button>
 <div id="stockAlert" class="alert"></div>
 </div>
 
 <div class="card invoice">
 <div id="items"></div>
 <div class="total" id="total">0</div>
+
+<select id="payType" onchange="toggleCredit()">
+<option value="cash">نقدي</option>
+<option value="credit">آجل</option>
+</select>
+
+<select id="customer" style="display:none"></select>
+
 <button class="btn" onclick="saveInvoice()">حفظ + طباعة</button>
 </div>
+
 </div>
 
+<!-- ================= الأصناف ================= -->
 <div id="products" class="container" style="display:none">
 <div class="card">
 <h3>➕ إضافة صنف</h3>
 <input id="pName" placeholder="اسم الصنف">
-<input id="pPrice" type="number" placeholder="السعر">
+<input id="pPrice" type="number" placeholder="سعر البيع">
 <input id="pQty" type="number" placeholder="الكمية">
 <input id="pCode" placeholder="باركود">
 <button class="btn" onclick="addProduct()">حفظ</button>
 </div>
 
 <div class="card">
-<h3>📦 الأصناف</h3>
 <table>
-<thead>
-<tr><th>الاسم</th><th>السعر</th><th>الكمية</th><th>باركود</th><th>حذف</th></tr>
-</thead>
+<thead><tr><th>الاسم</th><th>السعر</th><th>الكمية</th><th>حذف</th></tr></thead>
 <tbody id="productTable"></tbody>
 </table>
+</div>
+</div>
+
+<!-- ================= العملاء ================= -->
+<div id="customers" class="container" style="display:none">
+<div class="card">
+<h3>➕ إضافة عميل</h3>
+<input id="cName" placeholder="اسم العميل">
+<button class="btn" onclick="addCustomer()">حفظ</button>
+</div>
+
+<div class="card">
+<table>
+<thead><tr><th>الاسم</th><th>الرصيد</th><th>تسديد</th><th>قفل</th></tr></thead>
+<tbody id="customerTable"></tbody>
+</table>
+</div>
+</div>
+
+<!-- ================= التقارير ================= -->
+<div id="reports" class="container" style="display:none">
+<div class="card">
+<button class="btn" onclick="dailyReport()">📅 تقرير يومي</button>
+<button class="btn" onclick="monthlyReport()">🗓️ تقرير شهري</button>
+<button class="btn-danger" onclick="closeDay()">🔒 قفل اليوم</button>
+<div id="report"></div>
+</div>
+</div>
+
+<!-- ================= نسخ احتياطي ================= -->
+<div id="backup" class="container" style="display:none">
+<div class="card">
+<button class="btn" onclick="exportData()">⬇️ تصدير البيانات</button>
+<input type="file" onchange="importData(event)">
 </div>
 </div>
 
 <div id="printArea"></div>
 
 <script>
-/* ===== إعدادات ===== */
-const SHOP_NAME="بقالة الحاج محمود";
-const SHOP_PHONE="01000000000";
-
-/* ===== تحميل آمن ===== */
-function safeLoad(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
-let products=safeLoad("products",[]);
-let invoices=safeLoad("invoices",[]);
+/* ===== أدوات ===== */
+function safe(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
+let products=safe("products",[]);
+let customers=safe("customers",[]);
+let invoices=safe("invoices",[]);
+let dayClosed=safe("dayClosed",false);
 let cart=[];
 let invoiceNo=+localStorage.getItem("invoiceNo")||1;
 
@@ -97,29 +146,22 @@ document.querySelectorAll(".container").forEach(d=>d.style.display="none");
 document.getElementById(id).style.display="block";
 document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
 btn.classList.add("active");
-renderProducts();
+renderAll();
 }
 
-/* ===== بحث ===== */
-search.oninput=()=>renderProducts();
+/* ===== كاشير ===== */
+search.oninput=renderProducts;
 function renderProducts(){
 productSelect.innerHTML="";
-productTable.innerHTML="";
 let v=search.value.toLowerCase();
 products.forEach((p,i)=>{
 if(p.n.toLowerCase().includes(v)||p.c===search.value)
 productSelect.innerHTML+=`<option value="${i}">${p.n} (${p.s})</option>`;
-productTable.innerHTML+=`
-<tr>
-<td>${p.n}</td><td>${p.p}</td><td>${p.s}</td><td>${p.c}</td>
-<td><button class="btn-danger" onclick="delProduct(${i})">✖</button></td>
-</tr>`;
 });
-checkStock();
+stockAlert.innerHTML=products.filter(p=>p.s<=5).map(p=>"⚠️ "+p.n).join("<br>");
 }
-
-/* ===== إضافة للفاتورة ===== */
 function addItem(){
+if(dayClosed)return alert("اليوم مقفول");
 let i=productSelect.value,q=+qty.value;
 if(i===""||q<=0)return;
 let p=products[i];
@@ -128,76 +170,113 @@ if(e){if(e.q+q>p.s)return alert("المخزون لا يكفي");e.q+=q;}
 else{if(q>p.s)return alert("المخزون لا يكفي");cart.push({n:p.n,p:p.p,q});}
 renderInvoice();
 }
-
-/* ===== عرض فاتورة ===== */
 function renderInvoice(){
 let t=0;items.innerHTML="";
-cart.forEach(i=>{
-t+=i.p*i.q;
-items.innerHTML+=`<div class="item"><span>${i.n} × ${i.q}</span><span>${i.p*i.q}</span></div>`;
-});
+cart.forEach(i=>{t+=i.p*i.q;items.innerHTML+=`<div class="item"><span>${i.n} × ${i.q}</span><span>${i.p*i.q}</span></div>`});
 total.innerText="الإجمالي: "+t;
 }
-
-/* ===== حفظ ===== */
+function toggleCredit(){
+customer.style.display=payType.value==="credit"?"block":"none";
+renderCustomersSelect();
+}
 function saveInvoice(){
 if(!cart.length)return;
-for(let i of cart){
-let p=products.find(x=>x.n===i.n);
-if(!p||p.s<i.q)return alert("خطأ في المخزون");
-p.s-=i.q;
-}
 let t=cart.reduce((a,i)=>a+i.p*i.q,0);
+if(payType.value==="credit"){
+let c=customers[customer.value];
+if(!c||c.locked)return alert("الحساب مقفول");
+c.balance+=t;
+}
+cart.forEach(i=>products.find(p=>p.n===i.n).s-=i.q);
 let date=new Date().toLocaleString();
-invoices.push({no:invoiceNo++,date,total:t,items:[...cart]});
+invoices.push({no:invoiceNo++,total:t,type:payType.value,date});
 localStorage.setItem("invoiceNo",invoiceNo);
-localStorage.setItem("products",JSON.stringify(products));
-localStorage.setItem("invoices",JSON.stringify(invoices));
+saveAll();
 printInvoice(invoiceNo-1,date,[...cart],t);
-cart=[];renderInvoice();renderProducts();
+cart=[];renderInvoice();renderAll();
 }
 
 /* ===== طباعة ===== */
 function printInvoice(no,date,items,t){
-printArea.innerHTML=`
-<div style="text-align:center;font-family:Tahoma">
-<b>${SHOP_NAME}</b><br>${SHOP_PHONE}<br>
---------------------<br>
-فاتورة رقم ${no}<br>${date}<br>
---------------------<br>
+printArea.innerHTML=`<div style="text-align:center">
+<b>بقالة الحاج محمود</b><br>
+فاتورة ${no}<br>${date}<br>----------------<br>
 ${items.map(i=>`${i.n}<br>${i.q} × ${i.p} = ${i.p*i.q}`).join("<br>")}
---------------------<br>
-<b>الإجمالي: ${t} جنيه</b><br>
-شكراً لزيارتكم
-</div>`;
+<br>----------------<br><b>الإجمالي: ${t}</b></div>`;
 window.print();
 }
 
-/* ===== إضافة صنف ===== */
+/* ===== أصناف ===== */
 function addProduct(){
-if(!pName.value||!pPrice.value)return alert("بيانات ناقصة");
 products.push({n:pName.value,p:+pPrice.value,s:+pQty.value||0,c:pCode.value||""});
+saveAll();pName.value=pPrice.value=pQty.value=pCode.value="";renderAll();
+}
+function renderProductsTable(){
+productTable.innerHTML="";
+products.forEach((p,i)=>{
+productTable.innerHTML+=`<tr><td>${p.n}</td><td>${p.p}</td><td>${p.s}</td>
+<td><button class="btn-danger" onclick="products.splice(${i},1);saveAll();renderAll()">✖</button></td></tr>`;
+});
+}
+
+/* ===== عملاء ===== */
+function addCustomer(){
+customers.push({n:cName.value,balance:0,locked:false});
+saveAll();cName.value="";renderAll();
+}
+function renderCustomers(){
+customerTable.innerHTML="";
+customers.forEach((c,i)=>{
+customerTable.innerHTML+=`<tr>
+<td>${c.n}</td><td>${c.balance}</td>
+<td><button onclick="let a=+prompt('مبلغ');if(a){c.balance-=a;saveAll();renderAll()}">تسديد</button></td>
+<td><button onclick="c.locked=!c.locked;saveAll();renderAll()">${c.locked?'مقفول':'مفتوح'}</button></td>
+</tr>`;
+});
+}
+function renderCustomersSelect(){
+customer.innerHTML="";
+customers.forEach((c,i)=>customer.innerHTML+=`<option value="${i}">${c.n}</option>`);
+}
+
+/* ===== تقارير ===== */
+function dailyReport(){
+let d=new Date().toLocaleDateString();
+let r=invoices.filter(i=>i.date.includes(d));
+report.innerHTML="إجمالي اليوم: "+r.reduce((a,i)=>a+i.total,0);
+}
+function monthlyReport(){
+let m=new Date().getMonth();
+let r=invoices.filter(i=>new Date(i.date).getMonth()===m);
+report.innerHTML="إجمالي الشهر: "+r.reduce((a,i)=>a+i.total,0);
+}
+function closeDay(){
+dayClosed=true;localStorage.setItem("dayClosed",true);alert("تم قفل اليوم");
+}
+
+/* ===== نسخ احتياطي ===== */
+function exportData(){
+let data={products,customers,invoices,invoiceNo};
+let a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:"application/json"}));
+a.download="backup.json";a.click();
+}
+function importData(e){
+let r=new FileReader();
+r.onload=()=>{let d=JSON.parse(r.result);products=d.products;customers=d.customers;invoices=d.invoices;invoiceNo=d.invoiceNo;saveAll();renderAll();};
+r.readAsText(e.target.files[0]);
+}
+
+/* ===== حفظ ===== */
+function saveAll(){
 localStorage.setItem("products",JSON.stringify(products));
-pName.value=pPrice.value=pQty.value=pCode.value="";
-renderProducts();
+localStorage.setItem("customers",JSON.stringify(customers));
+localStorage.setItem("invoices",JSON.stringify(invoices));
 }
 
-/* ===== حذف ===== */
-function delProduct(i){
-if(confirm("حذف الصنف؟")){
-products.splice(i,1);
-localStorage.setItem("products",JSON.stringify(products));
-renderProducts();
-}
-}
-
-/* ===== تنبيه مخزون ===== */
-function checkStock(){
-stockAlert.innerHTML="";
-products.forEach(p=>{if(p.s<=5)stockAlert.innerHTML+=`⚠️ ${p.n}<br>`});
-}
-
-renderProducts();
+/* ===== تشغيل ===== */
+function renderAll(){renderProducts();renderProductsTable();renderCustomers();renderCustomersSelect();}
+renderAll();
 </script>
 
 </body>
