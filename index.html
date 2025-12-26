@@ -19,7 +19,7 @@
         nav button {
             padding: 10px;
             margin: 5px;
-            width: 45%;
+            width: 30%;
         }
         .container {
             padding: 10px;
@@ -62,6 +62,7 @@
 <nav class="container">
     <button onclick="show('entries')">القيود</button>
     <button onclick="show('report')">التقرير</button>
+    <button onclick="exportCSV()">تصدير</button>
 </nav>
 
 <div class="container">
@@ -75,6 +76,7 @@
             <option value="expense">مصروف</option>
         </select>
         <button onclick="add()">إضافة</button>
+        <button onclick="clearAll()">🗑 مسح الكل</button>
 
         <table>
             <thead>
@@ -124,8 +126,7 @@ function render() {
             </td>
             <td>${item.amount}</td>
             <td><button onclick="removeItem(${index})">❌</button></td>
-        </tr>
-        `;
+        </tr>`;
     });
 
     document.getElementById("data").innerHTML = table;
@@ -152,6 +153,27 @@ function removeItem(index) {
     data.splice(index, 1);
     localStorage.setItem("accounts", JSON.stringify(data));
     render();
+}
+
+function clearAll() {
+    if (confirm("هل أنت متأكد من مسح كل البيانات؟")) {
+        data = [];
+        localStorage.removeItem("accounts");
+        render();
+    }
+}
+
+function exportCSV() {
+    let csv = "البيان,النوع,المبلغ\n";
+    data.forEach(item => {
+        csv += `${item.name},${item.type === "income" ? "إيراد" : "مصروف"},${item.amount}\n`;
+    });
+
+    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "accounting_data.csv";
+    link.click();
 }
 
 render();
