@@ -2,13 +2,14 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>نظام فواتير تجاري</title>
+<title>نظام محاسبي تجاري</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 :root{
 --main:#0f172a;
---accent:#22c55e;
+--accent:#2563eb;
+--success:#22c55e;
 --danger:#ef4444;
 --bg:#f1f5f9;
 --card:#ffffff;
@@ -24,7 +25,7 @@ background:var(--bg);
 header{
 background:linear-gradient(90deg,#0f172a,#1e293b);
 color:#fff;
-padding:18px;
+padding:15px;
 text-align:center;
 }
 
@@ -35,7 +36,7 @@ border-bottom:1px solid #ddd;
 }
 nav button{
 flex:1;
-padding:14px;
+padding:12px;
 border:none;
 background:none;
 font-size:14px;
@@ -51,27 +52,6 @@ margin-bottom:12px;
 border-radius:10px;
 box-shadow:0 4px 10px rgba(0,0,0,.08);
 }
-
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-gap:10px;
-}
-
-.stat{
-padding:12px;
-border-radius:8px;
-color:#fff;
-text-align:center;
-font-size:14px;
-}
-.stat span{font-size:18px;font-weight:bold}
-
-.s1{background:#22c55e}
-.s2{background:#ef4444}
-.s3{background:#0ea5e9}
-.s4{background:#8b5cf6}
-.s5{background:#f59e0b}
 
 input,select{
 width:100%;
@@ -92,15 +72,13 @@ cursor:pointer;
 }
 
 .btn-main{background:var(--accent);color:#fff}
-.btn-dark{background:var(--main);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
 
 .hidden{display:none}
 
 /* طباعة حرارية */
-#printArea{
-width:80mm;
-font-size:12px;
-}
+#printArea{width:80mm;font-size:12px}
 @media print{
 body *{visibility:hidden}
 #printArea, #printArea *{visibility:visible}
@@ -111,186 +89,227 @@ body *{visibility:hidden}
 
 <body>
 
+<!-- ===== تسجيل الدخول ===== -->
+<div id="login" class="container">
+<div class="card">
+<h3>🔐 تسجيل الدخول</h3>
+<input id="loginUser" placeholder="اسم المستخدم">
+<input id="loginPass" type="password" placeholder="كلمة المرور">
+<button class="btn-main" onclick="login()">دخول</button>
+</div>
+</div>
+
+<!-- ===== التطبيق ===== -->
+<div id="app" class="hidden">
+
 <header>
-<h2 id="shopName">اسم المحل</h2>
-<small>نظام فواتير وإحصائيات</small>
+<h3>نظام محاسبي تجاري</h3>
+<small id="currentUser"></small>
 </header>
 
 <nav>
-<button onclick="show('dashboard')">📊 الإحصائيات</button>
-<button onclick="show('invoice')">🧾 فاتورة</button>
-<button onclick="show('partners')">👥 عملاء</button>
-<button onclick="show('settings')">⚙️ إعدادات</button>
+<button onclick="show('dashboard')">📊</button>
+<button onclick="show('invoice')">🧾</button>
+<button onclick="show('products')">📦</button>
+<button onclick="show('users')">👤</button>
+<button onclick="logout()">🚪</button>
 </nav>
 
 <div class="container">
 
 <!-- ===== Dashboard ===== -->
 <div id="dashboard" class="card">
-<h3>لوحة الإحصائيات</h3>
-
-<div class="grid">
-<div class="stat s1">إجمالي المبيعات<br><span id="sales">0</span></div>
-<div class="stat s2">إجمالي المشتريات<br><span id="buys">0</span></div>
-<div class="stat s3">صافي الربح<br><span id="profit">0</span></div>
-<div class="stat s4">عدد الفواتير<br><span id="count">0</span></div>
-<div class="stat s5">أعلى عميل<br><span id="topClient">-</span></div>
-</div>
-
-<br>
-<div id="lastInvoice"></div>
+<h3>لوحة التحكم</h3>
+<div id="stats"></div>
 </div>
 
 <!-- ===== فاتورة ===== -->
 <div id="invoice" class="card hidden">
-<b>رقم الفاتورة: <span id="invoiceNo"></span></b>
+<b>فاتورة جديدة</b>
 
-<select id="partner"></select>
-<input id="desc" placeholder="الوصف">
-<input id="amount" type="number" placeholder="المبلغ">
+<select id="productSelect"></select>
+<input id="qty" type="number" placeholder="الكمية" value="1">
 
-<input id="tax" type="number" placeholder="ضريبة %">
-<input id="discount" type="number" placeholder="خصم">
+<button class="btn-success" onclick="addItem()">إضافة للفاتورة</button>
 
-<select id="type">
-<option value="income">بيع</option>
-<option value="expense">شراء</option>
-</select>
+<hr>
+<div id="invoiceItems"></div>
+<b id="invoiceTotal">الإجمالي: 0</b>
 
-<button class="btn-main" onclick="addInvoice()">حفظ الفاتورة</button>
-<button class="btn-dark" onclick="printInvoice()">🖨 طباعة</button>
+<button class="btn-main" onclick="saveInvoice()">حفظ</button>
+<button class="btn-success" onclick="printInvoice()">🖨 طباعة</button>
 </div>
 
-<!-- ===== عملاء ===== -->
-<div id="partners" class="card hidden">
-<input id="partnerName" placeholder="اسم العميل">
-<button class="btn-main" onclick="addPartner()">إضافة</button>
-<ul id="partnerList"></ul>
+<!-- ===== أصناف ===== -->
+<div id="products" class="card hidden">
+<h3>📦 الأصناف</h3>
+<input id="productName" placeholder="اسم الصنف">
+<input id="productPrice" type="number" placeholder="السعر">
+<button class="btn-main" onclick="addProduct()">إضافة صنف</button>
+<ul id="productList"></ul>
 </div>
 
-<!-- ===== إعدادات ===== -->
-<div id="settings" class="card hidden">
-<input id="shopNameInput" placeholder="اسم المحل">
-<button class="btn-main" onclick="saveSettings()">حفظ</button>
+<!-- ===== مستخدمين ===== -->
+<div id="users" class="card hidden">
+<h3>👤 المستخدمين</h3>
+<input id="newUser" placeholder="اسم المستخدم">
+<input id="newPass" placeholder="كلمة المرور">
+<button class="btn-main" onclick="addUser()">إضافة مستخدم</button>
+<ul id="userList"></ul>
 </div>
 
 </div>
+</div>
 
-<!-- ===== الطباعة ===== -->
+<!-- ===== طباعة ===== -->
 <div id="printArea" class="hidden">
-<h3 id="pShop"></h3>
+<h3>فاتورة</h3>
 <div id="printContent"></div>
 <p style="text-align:center">شكراً لزيارتكم</p>
 </div>
 
 <script>
-let partners=JSON.parse(localStorage.getItem("partners"))||[];
-let invoices=JSON.parse(localStorage.getItem("invoices"))||[];
-let counter=Number(localStorage.getItem("counter"))||1;
+/* ===== بيانات ===== */
+let users = JSON.parse(localStorage.getItem("users")) || [
+{u:"admin",p:"1234"}
+];
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+let cart = [];
+let loggedUser = localStorage.getItem("loggedUser");
 
-invoiceNo.innerText=counter;
-shopName.innerText=localStorage.getItem("shopName")||"اسم المحل";
+/* ===== دخول ===== */
+function login(){
+let u=loginUser.value,p=loginPass.value;
+let ok=users.find(x=>x.u===u && x.p===p);
+if(ok){
+localStorage.setItem("loggedUser",u);
+showApp();
+}else alert("بيانات غير صحيحة");
+}
 
+function showApp(){
+login.classList.add("hidden");
+app.classList.remove("hidden");
+currentUser.innerText="المستخدم: "+localStorage.getItem("loggedUser");
+renderAll();
+}
+
+if(loggedUser) showApp();
+
+/* ===== خروج ===== */
+function logout(){
+localStorage.removeItem("loggedUser");
+location.reload();
+}
+
+/* ===== تنقل ===== */
 function show(id){
-["dashboard","invoice","partners","settings"].forEach(x=>{
+["dashboard","invoice","products","users"].forEach(x=>{
 document.getElementById(x).classList.add("hidden");
 });
 document.getElementById(id).classList.remove("hidden");
 }
 
-function save(){
-localStorage.setItem("partners",JSON.stringify(partners));
-localStorage.setItem("invoices",JSON.stringify(invoices));
-localStorage.setItem("counter",counter);
-}
-
-function addPartner(){
-if(partnerName.value){
-partners.push(partnerName.value);
-partnerName.value="";
+/* ===== أصناف ===== */
+function addProduct(){
+if(productName.value && productPrice.value){
+products.push({n:productName.value,p:+productPrice.value});
+productName.value=productPrice.value="";
 save();
-renderPartners();
+renderProducts();
 }
 }
 
-function renderPartners(){
-partner.innerHTML="";
-partnerList.innerHTML="";
-partners.forEach(p=>{
-partner.innerHTML+=`<option>${p}</option>`;
-partnerList.innerHTML+=`<li>${p}</li>`;
+function renderProducts(){
+productSelect.innerHTML="";
+productList.innerHTML="";
+products.forEach((p,i)=>{
+productSelect.innerHTML+=`<option value="${i}">${p.n} - ${p.p}</option>`;
+productList.innerHTML+=`<li>${p.n} - ${p.p}</li>`;
 });
 }
 
-function addInvoice(){
-let a=+amount.value;
-let taxv=+tax.value||0;
-let disc=+discount.value||0;
-let total=a + (a*taxv/100) - disc;
+/* ===== فاتورة ===== */
+function addItem(){
+let p=products[productSelect.value];
+let q=+qty.value;
+cart.push({n:p.n,p:p.p,q});
+renderCart();
+}
 
-invoices.push({
-no:counter,
-p:partner.value,
-a,total,
-t:type.value,
-date:new Date().toLocaleString()
+function renderCart(){
+let t=0;
+invoiceItems.innerHTML="";
+cart.forEach(i=>{
+let s=i.p*i.q;
+t+=s;
+invoiceItems.innerHTML+=`${i.n} x${i.q} = ${s}<br>`;
 });
-counter++;
+invoiceTotal.innerText="الإجمالي: "+t;
+}
+
+function saveInvoice(){
+invoices.push({user:loggedUser,items:cart,date:new Date().toLocaleString()});
+cart=[];
 save();
-invoiceNo.innerText=counter;
-renderDashboard();
+renderCart();
+renderStats();
 alert("تم حفظ الفاتورة");
 }
 
-function renderDashboard(){
-let sales=0,buys=0;
-let clientSum={};
+/* ===== مستخدمين ===== */
+function addUser(){
+if(newUser.value && newPass.value){
+users.push({u:newUser.value,p:newPass.value});
+newUser.value=newPass.value="";
+save();
+renderUsers();
+}
+}
 
-invoices.forEach(i=>{
-if(i.t==="income") sales+=i.total;
-else buys+=i.total;
-
-clientSum[i.p]=(clientSum[i.p]||0)+i.total;
+function renderUsers(){
+userList.innerHTML="";
+users.forEach(u=>{
+userList.innerHTML+=`<li>${u.u}</li>`;
 });
-
-let top="-",max=0;
-for(let c in clientSum){
-if(clientSum[c]>max){max=clientSum[c];top=c;}
 }
 
-document.getElementById("sales").innerText=sales;
-document.getElementById("buys").innerText=buys;
-document.getElementById("profit").innerText=sales-buys;
-document.getElementById("count").innerText=invoices.length;
-document.getElementById("topClient").innerText=top;
-
-if(invoices.length){
-let l=invoices[invoices.length-1];
-lastInvoice.innerHTML=`آخر فاتورة: #${l.no} - ${l.p} - ${l.total}`;
-}
-}
-
-function saveSettings(){
-localStorage.setItem("shopName",shopNameInput.value);
-shopName.innerText=shopNameInput.value;
-}
-
-function printInvoice(){
-let i=invoices[invoices.length-1];
-pShop.innerText=shopName.innerText;
-printContent.innerHTML=`
-فاتورة رقم: ${i.no}<br>
-العميل: ${i.p}<br>
-الإجمالي: ${i.total}<br>
-${i.date}
+/* ===== إحصائيات ===== */
+function renderStats(){
+stats.innerHTML=`
+عدد الفواتير: ${invoices.length}<br>
+عدد الأصناف: ${products.length}<br>
+عدد المستخدمين: ${users.length}
 `;
+}
+
+/* ===== طباعة ===== */
+function printInvoice(){
+let last=invoices[invoices.length-1];
+let html="";
+last.items.forEach(i=>{
+html+=`${i.n} x${i.q} = ${i.p*i.q}<br>`;
+});
+printContent.innerHTML=html;
 printArea.classList.remove("hidden");
 window.print();
 printArea.classList.add("hidden");
 }
 
-renderPartners();
-renderDashboard();
+/* ===== حفظ ===== */
+function save(){
+localStorage.setItem("users",JSON.stringify(users));
+localStorage.setItem("products",JSON.stringify(products));
+localStorage.setItem("invoices",JSON.stringify(invoices));
+}
+
+/* ===== تشغيل ===== */
+function renderAll(){
+renderProducts();
+renderUsers();
+renderStats();
+}
 </script>
 
 </body>
