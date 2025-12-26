@@ -1,213 +1,184 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <title>برنامج محاسبي</title>
-    <style>
-        body {
-            font-family: Arial;
-            direction: rtl;
-            background: #f0f0f0;
-            margin: 0;
-        }
-        header {
-            background: #222;
-            color: #fff;
-            padding: 15px;
-            text-align: center;
-        }
-        .container {
-            padding: 10px;
-        }
-        input, select, button {
-            padding: 10px;
-            margin: 5px;
-            width: 95%;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-        }
-        th, td {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background: #ddd;
-        }
-        .income { color: green; }
-        .expense { color: red; }
-        .box {
-            background: #fff;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #000;
-        }
-        .hidden {
-            display: none;
-        }
-        nav button {
-            padding: 10px;
-            margin: 5px;
-            width: 30%;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>برنامج محاسبي</title>
+<style>
+body{font-family:Arial;direction:rtl;background:#f0f0f0;margin:0}
+header{background:#222;color:#fff;padding:15px;text-align:center}
+.container{padding:10px}
+input,select,button{padding:10px;margin:5px;width:95%}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{border:1px solid #000;padding:8px;text-align:center}
+th{background:#ddd}
+.income{color:green}
+.expense{color:red}
+.box{background:#fff;padding:10px;margin:5px 0;border:1px solid #000}
+.hidden{display:none}
+nav button{padding:10px;margin:5px;width:30%}
+</style>
 </head>
 <body>
 
-<!-- شاشة الدخول -->
+<!-- تسجيل الدخول -->
 <div id="login">
-    <header>🔐 تسجيل الدخول</header>
-    <div class="container">
-        <input id="password" type="password" placeholder="كلمة المرور">
-        <button onclick="login()">دخول</button>
-        <p>كلمة المرور الافتراضية: <b>1234</b></p>
-    </div>
+<header>🔐 تسجيل الدخول</header>
+<div class="container">
+<input id="password" type="password" placeholder="كلمة المرور">
+<button onclick="login()">دخول</button>
+</div>
 </div>
 
-<!-- البرنامج -->
+<!-- التطبيق -->
 <div id="app" class="hidden">
 
-<header>📊 برنامج محاسبي</header>
+<header id="companyHeader">📊 برنامج محاسبي</header>
 
 <nav class="container">
-    <button onclick="show('entries')">القيود</button>
-    <button onclick="show('report')">التقرير</button>
-    <button onclick="exportCSV()">تصدير</button>
+<button onclick="show('entries')">القيود</button>
+<button onclick="show('report')">التقرير</button>
+<button onclick="show('settings')">الإعدادات</button>
 </nav>
 
 <div class="container">
 
-    <!-- القيود -->
-    <div id="entries">
-        <input id="name" placeholder="البيان">
-        <input id="amount" type="number" placeholder="المبلغ">
-        <select id="type">
-            <option value="income">إيراد</option>
-            <option value="expense">مصروف</option>
-        </select>
-        <button onclick="add()">إضافة</button>
-        <button onclick="clearAll()">🗑 مسح الكل</button>
+<!-- القيود -->
+<div id="entries">
+<input id="name" placeholder="البيان">
+<input id="amount" type="number" placeholder="المبلغ">
+<select id="type">
+<option value="income">إيراد</option>
+<option value="expense">مصروف</option>
+</select>
+<button onclick="add()">إضافة</button>
+<button onclick="clearAll()">🗑 مسح الكل</button>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>البيان</th>
-                    <th>النوع</th>
-                    <th>المبلغ</th>
-                    <th>حذف</th>
-                </tr>
-            </thead>
-            <tbody id="data"></tbody>
-        </table>
-    </div>
+<table>
+<thead>
+<tr><th>البيان</th><th>النوع</th><th>المبلغ</th><th>حذف</th></tr>
+</thead>
+<tbody id="data"></tbody>
+</table>
+</div>
 
-    <!-- التقرير -->
-    <div id="report" class="hidden">
-        <div class="box income" id="totalIncome">إجمالي الإيرادات: 0</div>
-        <div class="box expense" id="totalExpense">إجمالي المصروفات: 0</div>
-        <div class="box" id="net">الصافي: 0</div>
-    </div>
+<!-- التقرير -->
+<div id="report" class="hidden">
+<div class="box income" id="totalIncome">إجمالي الإيرادات: 0</div>
+<div class="box expense" id="totalExpense">إجمالي المصروفات: 0</div>
+<div class="box" id="net">الصافي: 0</div>
+</div>
+
+<!-- الإعدادات -->
+<div id="settings" class="hidden">
+<input id="companyName" placeholder="اسم الشركة">
+<button onclick="saveCompany()">💾 حفظ اسم الشركة</button>
+<hr>
+<input id="newPass" type="password" placeholder="كلمة مرور جديدة">
+<button onclick="changePassword()">🔑 تغيير كلمة المرور</button>
+<hr>
+<button onclick="logout()">🚪 تسجيل خروج</button>
+</div>
 
 </div>
 </div>
 
 <script>
-// ====== الحماية ======
-const MASTER_PASSWORD = "1234";
+// ===== الإعدادات =====
+let PASSWORD = localStorage.getItem("password") || "1234";
+let COMPANY = localStorage.getItem("company") || "برنامج محاسبي";
+document.getElementById("companyHeader").innerText = "📊 " + COMPANY;
 
-function login() {
-    let pass = document.getElementById("password").value;
-    if (pass === MASTER_PASSWORD) {
-        localStorage.setItem("logged", "yes");
-        document.getElementById("login").classList.add("hidden");
-        document.getElementById("app").classList.remove("hidden");
-    } else {
-        alert("كلمة المرور غير صحيحة");
-    }
+// ===== دخول =====
+function login(){
+if(document.getElementById("password").value === PASSWORD){
+localStorage.setItem("logged","yes");
+showApp();
+}else alert("كلمة المرور غير صحيحة");
 }
 
-if (localStorage.getItem("logged") === "yes") {
-    document.getElementById("login").classList.add("hidden");
-    document.getElementById("app").classList.remove("hidden");
+function showApp(){
+document.getElementById("login").classList.add("hidden");
+document.getElementById("app").classList.remove("hidden");
 }
 
-// ====== المحاسبة ======
+if(localStorage.getItem("logged")==="yes") showApp();
+
+// ===== تنقل =====
+function show(id){
+["entries","report","settings"].forEach(x=>{
+document.getElementById(x).classList.add("hidden");
+});
+document.getElementById(id).classList.remove("hidden");
+}
+
+// ===== محاسبة =====
 let data = JSON.parse(localStorage.getItem("accounts")) || [];
 
-function show(section) {
-    document.getElementById("entries").classList.add("hidden");
-    document.getElementById("report").classList.add("hidden");
-    document.getElementById(section).classList.remove("hidden");
+function render(){
+let t="",inc=0,exp=0;
+data.forEach((i,n)=>{
+i.type==="income"?inc+=+i.amount:exp+=+i.amount;
+t+=`<tr>
+<td>${i.name}</td>
+<td class="${i.type}">${i.type==="income"?"إيراد":"مصروف"}</td>
+<td>${i.amount}</td>
+<td><button onclick="removeItem(${n})">❌</button></td>
+</tr>`;
+});
+data.length?null:null;
+document.getElementById("data").innerHTML=t;
+document.getElementById("totalIncome").innerText="إجمالي الإيرادات: "+inc;
+document.getElementById("totalExpense").innerText="إجمالي المصروفات: "+exp;
+document.getElementById("net").innerText="الصافي: "+(inc-exp);
 }
 
-function render() {
-    let table = "";
-    let income = 0;
-    let expense = 0;
-
-    data.forEach((item, index) => {
-        if (item.type === "income") income += Number(item.amount);
-        else expense += Number(item.amount);
-
-        table += `
-        <tr>
-            <td>${item.name}</td>
-            <td class="${item.type}">
-                ${item.type === "income" ? "إيراد" : "مصروف"}
-            </td>
-            <td>${item.amount}</td>
-            <td><button onclick="removeItem(${index})">❌</button></td>
-        </tr>`;
-    });
-
-    document.getElementById("data").innerHTML = table;
-    document.getElementById("totalIncome").innerText = "إجمالي الإيرادات: " + income;
-    document.getElementById("totalExpense").innerText = "إجمالي المصروفات: " + expense;
-    document.getElementById("net").innerText = "الصافي: " + (income - expense);
+function add(){
+let n=name.value,a=amount.value,t=type.value;
+if(n&&a){
+data.push({name:n,amount:a,type:t});
+localStorage.setItem("accounts",JSON.stringify(data));
+name.value=amount.value="";
+render();
+}
 }
 
-function add() {
-    let name = document.getElementById("name").value;
-    let amount = document.getElementById("amount").value;
-    let type = document.getElementById("type").value;
-
-    if (name && amount) {
-        data.push({ name, amount, type });
-        localStorage.setItem("accounts", JSON.stringify(data));
-        document.getElementById("name").value = "";
-        document.getElementById("amount").value = "";
-        render();
-    }
+function removeItem(i){
+data.splice(i,1);
+localStorage.setItem("accounts",JSON.stringify(data));
+render();
 }
 
-function removeItem(index) {
-    data.splice(index, 1);
-    localStorage.setItem("accounts", JSON.stringify(data));
-    render();
+function clearAll(){
+if(confirm("مسح كل البيانات؟")){
+data=[];
+localStorage.removeItem("accounts");
+render();
+}
 }
 
-function clearAll() {
-    if (confirm("هل أنت متأكد من مسح كل البيانات؟")) {
-        data = [];
-        localStorage.removeItem("accounts");
-        render();
-    }
+// ===== إعدادات =====
+function saveCompany(){
+let c=companyName.value;
+if(c){
+localStorage.setItem("company",c);
+companyHeader.innerText="📊 "+c;
+alert("تم الحفظ");
+}
 }
 
-function exportCSV() {
-    let csv = "البيان,النوع,المبلغ\n";
-    data.forEach(item => {
-        csv += `${item.name},${item.type === "income" ? "إيراد" : "مصروف"},${item.amount}\n`;
-    });
+function changePassword(){
+let p=newPass.value;
+if(p){
+localStorage.setItem("password",p);
+PASSWORD=p;
+alert("تم تغيير كلمة المرور");
+newPass.value="";
+}
+}
 
-    let blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "accounting_data.csv";
-    link.click();
+function logout(){
+localStorage.removeItem("logged");
+location.reload();
 }
 
 render();
