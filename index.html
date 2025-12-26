@@ -17,9 +17,10 @@ input,select{width:100%;padding:10px;margin:4px 0;border-radius:8px;border:1px s
 button{padding:12px;border:none;border-radius:10px;font-weight:bold}
 .btn{background:#2563eb;color:#fff;width:100%}
 .btn-danger{background:#dc2626;color:#fff}
-.item{display:flex;justify-content:space-between;padding:4px 0}
-.total{font-size:18px;font-weight:bold;text-align:center;color:#16a34a}
+.item{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dotted #ccc}
+.total{font-size:20px;font-weight:bold;text-align:center;color:#16a34a;margin-top:8px}
 .alert{color:#dc2626;font-weight:bold;text-align:center}
+.invoice{background:#fafafa;border:2px dashed #999;border-radius:10px;padding:10px}
 table{width:100%;border-collapse:collapse}
 th,td{border:1px solid #ddd;padding:6px;text-align:center}
 @media print{
@@ -39,9 +40,7 @@ body *{visibility:hidden}
 <button onclick="showTab('products',this)">إدارة الأصناف</button>
 </div>
 
-<!-- ===== الكاشير ===== -->
 <div id="cashier" class="container">
-
 <div class="card">
 <input id="search" placeholder="بحث أو باركود">
 <input id="qty" type="number" value="1" min="1">
@@ -50,17 +49,14 @@ body *{visibility:hidden}
 <div id="stockAlert" class="alert"></div>
 </div>
 
-<div class="card">
+<div class="card invoice">
 <div id="items"></div>
 <div class="total" id="total">0</div>
 <button class="btn" onclick="saveInvoice()">حفظ + طباعة</button>
 </div>
-
 </div>
 
-<!-- ===== إدارة الأصناف ===== -->
 <div id="products" class="container" style="display:none">
-
 <div class="card">
 <h3>➕ إضافة صنف</h3>
 <input id="pName" placeholder="اسم الصنف">
@@ -73,16 +69,21 @@ body *{visibility:hidden}
 <div class="card">
 <h3>📦 الأصناف</h3>
 <table>
-<thead><tr><th>الاسم</th><th>السعر</th><th>الكمية</th><th>باركود</th><th>حذف</th></tr></thead>
+<thead>
+<tr><th>الاسم</th><th>السعر</th><th>الكمية</th><th>باركود</th><th>حذف</th></tr>
+</thead>
 <tbody id="productTable"></tbody>
 </table>
 </div>
-
 </div>
 
 <div id="printArea"></div>
 
 <script>
+/* ===== إعدادات ===== */
+const SHOP_NAME="بقالة الحاج محمود";
+const SHOP_PHONE="01000000000";
+
 /* ===== تحميل آمن ===== */
 function safeLoad(k,d){try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}}
 let products=safeLoad("products",[]);
@@ -99,14 +100,14 @@ btn.classList.add("active");
 renderProducts();
 }
 
-/* ===== بحث كاشير ===== */
+/* ===== بحث ===== */
 search.oninput=()=>renderProducts();
 function renderProducts(){
 productSelect.innerHTML="";
 productTable.innerHTML="";
-let v=search.value.trim();
+let v=search.value.toLowerCase();
 products.forEach((p,i)=>{
-if(p.n.includes(v)||p.c===v)
+if(p.n.toLowerCase().includes(v)||p.c===search.value)
 productSelect.innerHTML+=`<option value="${i}">${p.n} (${p.s})</option>`;
 productTable.innerHTML+=`
 <tr>
@@ -122,14 +123,9 @@ function addItem(){
 let i=productSelect.value,q=+qty.value;
 if(i===""||q<=0)return;
 let p=products[i];
-let existing=cart.find(c=>c.n===p.n);
-if(existing){
-if(existing.q+q>p.s)return alert("المخزون لا يكفي");
-existing.q+=q;
-}else{
-if(q>p.s)return alert("المخزون لا يكفي");
-cart.push({n:p.n,p:p.p,q});
-}
+let e=cart.find(x=>x.n===p.n);
+if(e){if(e.q+q>p.s)return alert("المخزون لا يكفي");e.q+=q;}
+else{if(q>p.s)return alert("المخزون لا يكفي");cart.push({n:p.n,p:p.p,q});}
 renderInvoice();
 }
 
@@ -143,33 +139,37 @@ items.innerHTML+=`<div class="item"><span>${i.n} × ${i.q}</span><span>${i.p*i.q
 total.innerText="الإجمالي: "+t;
 }
 
-/* ===== حفظ فاتورة ===== */
+/* ===== حفظ ===== */
 function saveInvoice(){
 if(!cart.length)return;
 for(let i of cart){
 let p=products.find(x=>x.n===i.n);
 if(!p||p.s<i.q)return alert("خطأ في المخزون");
+p.s-=i.q;
 }
-cart.forEach(i=>products.find(p=>p.n===i.n).s-=i.q);
-
 let t=cart.reduce((a,i)=>a+i.p*i.q,0);
 let date=new Date().toLocaleString();
-
-invoices.push({no:invoiceNo++,total:t,date,items:[...cart]});
+invoices.push({no:invoiceNo++,date,total:t,items:[...cart]});
 localStorage.setItem("invoiceNo",invoiceNo);
 localStorage.setItem("products",JSON.stringify(products));
 localStorage.setItem("invoices",JSON.stringify(invoices));
-
 printInvoice(invoiceNo-1,date,[...cart],t);
 cart=[];renderInvoice();renderProducts();
 }
 
 /* ===== طباعة ===== */
 function printInvoice(no,date,items,t){
-printArea.innerHTML=
-`<b>فاتورة رقم ${no}</b><br>${date}<hr>`+
-items.map(i=>`${i.n} × ${i.q} = ${i.p*i.q}`).join("<br>")+
-`<hr>الإجمالي: ${t}`;
+printArea.innerHTML=`
+<div style="text-align:center;font-family:Tahoma">
+<b>${SHOP_NAME}</b><br>${SHOP_PHONE}<br>
+--------------------<br>
+فاتورة رقم ${no}<br>${date}<br>
+--------------------<br>
+${items.map(i=>`${i.n}<br>${i.q} × ${i.p} = ${i.p*i.q}`).join("<br>")}
+--------------------<br>
+<b>الإجمالي: ${t} جنيه</b><br>
+شكراً لزيارتكم
+</div>`;
 window.print();
 }
 
