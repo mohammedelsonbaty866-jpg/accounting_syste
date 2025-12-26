@@ -2,15 +2,15 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>برنامج فواتير</title>
+<title>نظام فواتير تجاري</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 :root{
---main:#1f2937;
---accent:#0ea5e9;
+--main:#0f172a;
+--accent:#22c55e;
 --danger:#ef4444;
---bg:#f3f4f6;
+--bg:#f1f5f9;
 --card:#ffffff;
 }
 
@@ -22,9 +22,9 @@ background:var(--bg);
 }
 
 header{
-background:var(--main);
+background:linear-gradient(90deg,#0f172a,#1e293b);
 color:#fff;
-padding:15px;
+padding:18px;
 text-align:center;
 }
 
@@ -35,24 +35,43 @@ border-bottom:1px solid #ddd;
 }
 nav button{
 flex:1;
-padding:12px;
+padding:14px;
 border:none;
 background:none;
 font-size:14px;
 }
-nav button:hover{
-background:var(--bg);
-}
+nav button:hover{background:#f1f5f9}
 
 .container{padding:12px}
 
 .card{
 background:var(--card);
-padding:12px;
+padding:14px;
 margin-bottom:12px;
-border-radius:8px;
-box-shadow:0 2px 6px rgba(0,0,0,.1);
+border-radius:10px;
+box-shadow:0 4px 10px rgba(0,0,0,.08);
 }
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+gap:10px;
+}
+
+.stat{
+padding:12px;
+border-radius:8px;
+color:#fff;
+text-align:center;
+font-size:14px;
+}
+.stat span{font-size:18px;font-weight:bold}
+
+.s1{background:#22c55e}
+.s2{background:#ef4444}
+.s3{background:#0ea5e9}
+.s4{background:#8b5cf6}
+.s5{background:#f59e0b}
 
 input,select{
 width:100%;
@@ -63,22 +82,21 @@ border:1px solid #ccc;
 }
 
 button{
+width:100%;
 padding:12px;
+margin-top:6px;
 border:none;
 border-radius:6px;
 font-size:14px;
 cursor:pointer;
-width:100%;
-margin-top:6px;
 }
 
 .btn-main{background:var(--accent);color:#fff}
-.btn-danger{background:var(--danger);color:#fff}
 .btn-dark{background:var(--main);color:#fff}
 
 .hidden{display:none}
 
-/* فاتورة حرارية */
+/* طباعة حرارية */
 #printArea{
 width:80mm;
 font-size:12px;
@@ -94,21 +112,37 @@ body *{visibility:hidden}
 <body>
 
 <header>
-<h3 id="shopName">اسم المحل</h3>
-<small id="shopLogo">🧾</small>
+<h2 id="shopName">اسم المحل</h2>
+<small>نظام فواتير وإحصائيات</small>
 </header>
 
 <nav>
-<button onclick="show('invoice')">فاتورة</button>
-<button onclick="show('partners')">عملاء</button>
-<button onclick="show('report')">بحث</button>
-<button onclick="show('settings')">إعدادات</button>
+<button onclick="show('dashboard')">📊 الإحصائيات</button>
+<button onclick="show('invoice')">🧾 فاتورة</button>
+<button onclick="show('partners')">👥 عملاء</button>
+<button onclick="show('settings')">⚙️ إعدادات</button>
 </nav>
 
 <div class="container">
 
-<!-- فاتورة -->
-<div id="invoice" class="card">
+<!-- ===== Dashboard ===== -->
+<div id="dashboard" class="card">
+<h3>لوحة الإحصائيات</h3>
+
+<div class="grid">
+<div class="stat s1">إجمالي المبيعات<br><span id="sales">0</span></div>
+<div class="stat s2">إجمالي المشتريات<br><span id="buys">0</span></div>
+<div class="stat s3">صافي الربح<br><span id="profit">0</span></div>
+<div class="stat s4">عدد الفواتير<br><span id="count">0</span></div>
+<div class="stat s5">أعلى عميل<br><span id="topClient">-</span></div>
+</div>
+
+<br>
+<div id="lastInvoice"></div>
+</div>
+
+<!-- ===== فاتورة ===== -->
+<div id="invoice" class="card hidden">
 <b>رقم الفاتورة: <span id="invoiceNo"></span></b>
 
 <select id="partner"></select>
@@ -123,33 +157,26 @@ body *{visibility:hidden}
 <option value="expense">شراء</option>
 </select>
 
-<button class="btn-main" onclick="addInvoice()">حفظ</button>
+<button class="btn-main" onclick="addInvoice()">حفظ الفاتورة</button>
 <button class="btn-dark" onclick="printInvoice()">🖨 طباعة</button>
 </div>
 
-<!-- عملاء -->
+<!-- ===== عملاء ===== -->
 <div id="partners" class="card hidden">
 <input id="partnerName" placeholder="اسم العميل">
 <button class="btn-main" onclick="addPartner()">إضافة</button>
 <ul id="partnerList"></ul>
 </div>
 
-<!-- بحث -->
-<div id="report" class="card hidden">
-<input id="search" placeholder="بحث برقم الفاتورة أو الاسم" oninput="renderSearch()">
-<div id="searchResult"></div>
-</div>
-
-<!-- إعدادات -->
+<!-- ===== إعدادات ===== -->
 <div id="settings" class="card hidden">
 <input id="shopNameInput" placeholder="اسم المحل">
-<input id="shopLogoInput" placeholder="شعار (مثال 🧾)">
 <button class="btn-main" onclick="saveSettings()">حفظ</button>
 </div>
 
 </div>
 
-<!-- طباعة -->
+<!-- ===== الطباعة ===== -->
 <div id="printArea" class="hidden">
 <h3 id="pShop"></h3>
 <div id="printContent"></div>
@@ -162,13 +189,10 @@ let invoices=JSON.parse(localStorage.getItem("invoices"))||[];
 let counter=Number(localStorage.getItem("counter"))||1;
 
 invoiceNo.innerText=counter;
-
-// إعدادات
 shopName.innerText=localStorage.getItem("shopName")||"اسم المحل";
-shopLogo.innerText=localStorage.getItem("shopLogo")||"🧾";
 
 function show(id){
-["invoice","partners","report","settings"].forEach(x=>{
+["dashboard","invoice","partners","settings"].forEach(x=>{
 document.getElementById(x).classList.add("hidden");
 });
 document.getElementById(id).classList.remove("hidden");
@@ -207,38 +231,48 @@ let total=a + (a*taxv/100) - disc;
 invoices.push({
 no:counter,
 p:partner.value,
-d:desc.value,
-a,total,tax:taxv,disc,
+a,total,
 t:type.value,
 date:new Date().toLocaleString()
 });
 counter++;
 save();
 invoiceNo.innerText=counter;
-alert("تم الحفظ");
+renderDashboard();
+alert("تم حفظ الفاتورة");
 }
 
-function renderSearch(){
-let q=search.value;
-searchResult.innerHTML="";
-invoices.filter(i=>
-i.no==q || i.p.includes(q)
-).forEach(i=>{
-searchResult.innerHTML+=`
-<div class="card">
-فاتورة #${i.no}<br>
-${i.p}<br>
-الإجمالي: ${i.total}
-</div>`;
+function renderDashboard(){
+let sales=0,buys=0;
+let clientSum={};
+
+invoices.forEach(i=>{
+if(i.t==="income") sales+=i.total;
+else buys+=i.total;
+
+clientSum[i.p]=(clientSum[i.p]||0)+i.total;
 });
+
+let top="-",max=0;
+for(let c in clientSum){
+if(clientSum[c]>max){max=clientSum[c];top=c;}
+}
+
+document.getElementById("sales").innerText=sales;
+document.getElementById("buys").innerText=buys;
+document.getElementById("profit").innerText=sales-buys;
+document.getElementById("count").innerText=invoices.length;
+document.getElementById("topClient").innerText=top;
+
+if(invoices.length){
+let l=invoices[invoices.length-1];
+lastInvoice.innerHTML=`آخر فاتورة: #${l.no} - ${l.p} - ${l.total}`;
+}
 }
 
 function saveSettings(){
 localStorage.setItem("shopName",shopNameInput.value);
-localStorage.setItem("shopLogo",shopLogoInput.value);
 shopName.innerText=shopNameInput.value;
-shopLogo.innerText=shopLogoInput.value;
-alert("تم الحفظ");
 }
 
 function printInvoice(){
@@ -247,11 +281,7 @@ pShop.innerText=shopName.innerText;
 printContent.innerHTML=`
 فاتورة رقم: ${i.no}<br>
 العميل: ${i.p}<br>
-الوصف: ${i.d}<br>
-المبلغ: ${i.a}<br>
-الضريبة: ${i.tax}%<br>
-الخصم: ${i.disc}<br>
-<b>الإجمالي: ${i.total}</b><br>
+الإجمالي: ${i.total}<br>
 ${i.date}
 `;
 printArea.classList.remove("hidden");
@@ -260,6 +290,7 @@ printArea.classList.add("hidden");
 }
 
 renderPartners();
+renderDashboard();
 </script>
 
 </body>
