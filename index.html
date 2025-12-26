@@ -4,17 +4,35 @@
 <meta charset="UTF-8">
 <title>POS بقالة</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1e3a8a">
 
 <style>
 body{margin:0;font-family:Tahoma;direction:rtl;background:#f1f5f9}
 header{background:#1e3a8a;color:#fff;padding:14px;text-align:center;font-size:20px}
-button{padding:12px;border:none;border-radius:10px;font-size:16px}
-.btn{background:#1e3a8a;color:#fff;width:100%}
-.btn-success{background:#16a34a;color:#fff}
-.card{background:#fff;margin:10px;padding:10px;border-radius:10px}
-.invoice{border:1px solid #000;padding:10px;font-family:Courier New}
+.tabs{display:flex}
+.tabs button{flex:1;padding:12px;border:none;font-weight:bold}
+.tabs .active{background:#1e3a8a;color:#fff}
+.container{padding:10px}
+.card{background:#fff;border-radius:12px;padding:10px;margin-bottom:10px;box-shadow:0 2px 6px #0001}
+input,select,button{width:100%;padding:12px;margin:5px 0;font-size:16px}
+button{border:none;border-radius:10px}
+.btn{background:#1e3a8a;color:#fff}
+.btn-green{background:#16a34a;color:#fff}
+.btn-red{background:#dc2626;color:#fff}
+.row{display:flex;gap:5px}
+.row>*{flex:1}
+.invoice{border:1px dashed #000;font-family:Courier New;padding:8px}
 .item{display:flex;justify-content:space-between;border-bottom:1px dashed #000}
-.total{font-size:20px;font-weight:bold;text-align:center}
+.total{font-size:20px;font-weight:bold;text-align:center;margin-top:8px}
+.alert{color:red;text-align:center;font-weight:bold}
+table{width:100%;border-collapse:collapse}
+td,th{border:1px solid #ccc;padding:5px;text-align:center}
+@media print{
+body *{visibility:hidden}
+#printArea,*#printArea *{visibility:visible}
+#printArea{position:absolute;top:0;right:0;width:58mm}
+}
 </style>
 </head>
 
@@ -22,54 +40,145 @@ button{padding:12px;border:none;border-radius:10px;font-size:16px}
 
 <header>🛒 بقالة الحاج محمود</header>
 
+<div class="tabs">
+<button class="active" onclick="showTab('cashier',this)">كاشير</button>
+<button onclick="showTab('products',this)">أصناف</button>
+<button onclick="showTab('customers',this)">عملاء</button>
+<button onclick="showTab('reports',this)">تقارير</button>
+<button onclick="showTab('profits',this)">💰 أرباح</button>
+</div>
+
+<!-- كاشير -->
+<div id="cashier" class="container">
 <div class="card">
-<input id="search" placeholder="اسم الصنف أو باركود">
-<input id="qty" type="number" value="1">
+<input id="search" placeholder="اسم أو باركود" oninput="searchBarcode()">
+<div class="row">
+<input id="qty" type="number" value="1" min="1">
+<button class="btn" onclick="scan()">📷 باركود</button>
+</div>
 <select id="productSelect"></select>
-<button class="btn-success" onclick="addItem()">إضافة</button>
+<button class="btn-green" onclick="addItem()">إضافة</button>
+<div id="stockAlert" class="alert"></div>
 </div>
 
 <div class="card invoice">
+<div class="row">
+<button class="btn-green" onclick="setPay('cash')">نقدي</button>
+<button class="btn" onclick="setPay('credit')">آجل</button>
+</div>
+<select id="customerSelect" style="display:none"></select>
 <div id="items"></div>
-<div class="total" id="total">0</div>
-<button class="btn" onclick="saveInvoice()">حفظ</button>
+<div class="total" id="total">الإجمالي: 0</div>
+<button class="btn" onclick="saveInvoice()">حفظ + طباعة</button>
 </div>
 
-<script>
-let products=[
-{n:"سكر",p:20,s:50,c:"111"},
-{n:"زيت",p:70,s:30,c:"222"}
-];
-let cart=[];
+<video id="camera" style="display:none;width:100%"></video>
+</div>
 
+<!-- أصناف -->
+<div id="products" class="container" style="display:none">
+<div class="card">
+<input id="pName" placeholder="اسم الصنف">
+<input id="pBuy" type="number" placeholder="سعر الشراء">
+<input id="pPrice" type="number" placeholder="سعر البيع">
+<input id="pQty" type="number" placeholder="الكمية">
+<input id="pCode" placeholder="باركود">
+<button class="btn" onclick="addProduct()">حفظ الصنف</button>
+</div>
+<div class="card">
+<table>
+<thead><tr><th>اسم</th><th>شراء</th><th>بيع</th><th>كمية</th></tr></thead>
+<tbody id="productTable"></tbody>
+</table>
+</div>
+</div>
+
+<!-- عملاء -->
+<div id="customers" class="container" style="display:none">
+<div class="card">
+<input id="cName" placeholder="اسم العميل">
+<button class="btn" onclick="addCustomer()">إضافة عميل</button>
+</div>
+<div class="card">
+<table>
+<thead><tr><th>اسم</th><th>رصيد</th><th>سداد</th><th>قفل</th></tr></thead>
+<tbody id="customerTable"></tbody>
+</table>
+</div>
+</div>
+
+<!-- تقارير -->
+<div id="reports" class="container" style="display:none">
+<div class="card">
+<button class="btn" onclick="reportDaily()">تقرير يومي</button>
+<button class="btn" onclick="reportMonthly()">تقرير شهري</button>
+<button class="btn" onclick="reportYearly()">تقرير سنوي</button>
+<div id="report"></div>
+</div>
+</div>
+
+<!-- أرباح + نسخ احتياطي -->
+<div id="profits" class="container" style="display:none">
+<div class="card">
+<button class="btn" onclick="profitDaily()">ربح اليوم</button>
+<button class="btn" onclick="profitMonthly()">ربح الشهر</button>
+<button class="btn" onclick="profitYearly()">ربح السنة</button>
+<div id="profitResult" class="total"></div>
+</div>
+<div class="card">
+<button class="btn-green" onclick="backup()">📤 تصدير نسخة احتياطية</button>
+<input type="file" onchange="restore(this)">
+</div>
+</div>
+
+<div id="printArea"></div>
+
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script>
+/* ===== بيانات ===== */
+let products=JSON.parse(localStorage.products||"[]");
+let customers=JSON.parse(localStorage.customers||"[]");
+let invoices=JSON.parse(localStorage.invoices||"[]");
+let cart=[];
+let payType="cash";
+let invoiceNo=+localStorage.invoiceNo||1;
+
+/* ===== واجهة ===== */
+function showTab(id,btn){
+document.querySelectorAll(".container").forEach(d=>d.style.display="none");
+document.getElementById(id).style.display="block";
+document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+renderAll();
+}
+
+/* ===== كاشير ===== */
 function renderProducts(){
 productSelect.innerHTML="";
 products.forEach((p,i)=>{
-productSelect.innerHTML+=`<option value="${i}">${p.n}</option>`;
+productSelect.innerHTML+=`<option value="${i}">${p.n} (${p.s})</option>`;
 });
+stockAlert.innerHTML=products.filter(p=>p.s<=5).map(p=>"⚠ نفاد "+p.n).join("<br>");
 }
 
-search.oninput=()=>{
-let v=search.value;
+function searchBarcode(){
+let v=search.value.trim();
 let p=products.find(x=>x.c===v);
-if(p){
-productSelect.value=products.indexOf(p);
-addItem();
-search.value="";
+if(p){productSelect.value=products.indexOf(p);addItem();search.value="";}
 }
-};
 
 function addItem(){
-let i=productSelect.value;
+let p=products[productSelect.value];
 let q=+qty.value;
-let p=products[i];
-cart.push({n:p.n,p:p.p,q});
+let inCart=cart.find(i=>i.n===p.n);
+let used=inCart?inCart.q:0;
+if(q+used>p.s)return alert("مخزون غير كافي");
+inCart?inCart.q+=q:cart.push({n:p.n,p:p.p,q});
 renderInvoice();
 }
 
 function renderInvoice(){
-let t=0;
-items.innerHTML="";
+items.innerHTML="";let t=0;
 cart.forEach(i=>{
 t+=i.p*i.q;
 items.innerHTML+=`<div class="item"><span>${i.n} × ${i.q}</span><span>${i.p*i.q}</span></div>`;
@@ -77,12 +186,190 @@ items.innerHTML+=`<div class="item"><span>${i.n} × ${i.q}</span><span>${i.p*i.q
 total.innerText="الإجمالي: "+t;
 }
 
-function saveInvoice(){
-alert("تم الحفظ (نسخة اختبار)");
-cart=[];renderInvoice();
+function setPay(t){
+payType=t;
+customerSelect.style.display=t==="credit"?"block":"none";
 }
 
+function saveInvoice(){
+if(!cart.length)return;
+let totalVal=0,profit=0;
+let printedCart=[...cart];
+if(payType==="credit"){
+let c=customers[customerSelect.value];
+if(c.locked)return alert("الحساب مقفول");
+}
+cart.forEach(i=>{
+let pr=products.find(p=>p.n===i.n);
+totalVal+=i.p*i.q;
+profit+=(i.p-(pr.buy||0))*i.q;
+pr.s-=i.q;
+});
+if(payType==="credit"){
+customers[customerSelect.value].balance+=totalVal;
+}
+invoices.push({
+no:invoiceNo++,
+total:totalVal,
+profit,
+type:payType,
+date:new Date().toLocaleString()
+});
+cart=[];
+save();
+renderInvoice();
+printInvoice(printedCart,totalVal);
+}
+
+/* ===== طباعة ===== */
+function printInvoice(items,t){
+printArea.innerHTML=`
+<div style="font-family:Courier New;text-align:center">
+<b>بقالة الحاج محمود</b><br>
+فاتورة رقم ${invoiceNo-1}<br>
+------------------<br>
+${items.map(i=>`${i.n}<br>${i.q} × ${i.p} = ${i.q*i.p}`).join("<br>")}
+<br>------------------<br>
+<b>الإجمالي: ${t}</b>
+</div>`;
+window.print();
+}
+
+/* ===== باركود كاميرا ===== */
+function scan(){
+camera.style.display="block";
+new ZXing.BrowserBarcodeReader()
+.decodeFromVideoDevice(null,"camera",(r)=>{
+if(r){
+let p=products.find(x=>x.c===r.text);
+if(p){productSelect.value=products.indexOf(p);addItem();}
+camera.style.display="none";
+}
+});
+}
+
+/* ===== أصناف ===== */
+function addProduct(){
+products.push({
+n:pName.value,
+buy:+pBuy.value,
+p:+pPrice.value,
+s:+pQty.value,
+c:pCode.value
+});
+pName.value=pBuy.value=pPrice.value=pQty.value=pCode.value="";
+save();renderAll();
+}
+function renderProductTable(){
+productTable.innerHTML="";
+products.forEach(p=>{
+productTable.innerHTML+=`<tr><td>${p.n}</td><td>${p.buy}</td><td>${p.p}</td><td>${p.s}</td></tr>`;
+});
+}
+
+/* ===== عملاء ===== */
+function addCustomer(){
+customers.push({n:cName.value,balance:0,locked:false});
+cName.value="";save();renderAll();
+}
+function renderCustomers(){
+customerTable.innerHTML="";
+customers.forEach((c,i)=>{
+customerTable.innerHTML+=`
+<tr>
+<td>${c.n}</td>
+<td>${c.balance}</td>
+<td><button onclick="payCustomer(${i})">سداد</button></td>
+<td><button onclick="toggleLock(${i})">${c.locked?"مقفول":"مفتوح"}</button></td>
+</tr>`;
+});
+customerSelect.innerHTML="";
+customers.forEach((c,i)=>customerSelect.innerHTML+=`<option value="${i}">${c.n}</option>`);
+}
+function payCustomer(i){
+let a=+prompt("مبلغ السداد");
+if(a>0){customers[i].balance-=a;save();renderAll();}
+}
+function toggleLock(i){
+customers[i].locked=!customers[i].locked;
+save();renderAll();
+}
+
+/* ===== تقارير ===== */
+function reportDaily(){
+let d=new Date().toLocaleDateString();
+let r=invoices.filter(i=>i.date.includes(d));
+report.innerText="إجمالي اليوم: "+r.reduce((a,i)=>a+i.total,0);
+}
+function reportMonthly(){
+let m=new Date().getMonth();
+let r=invoices.filter(i=>new Date(i.date).getMonth()===m);
+report.innerText="إجمالي الشهر: "+r.reduce((a,i)=>a+i.total,0);
+}
+function reportYearly(){
+let y=new Date().getFullYear();
+let r=invoices.filter(i=>new Date(i.date).getFullYear()===y);
+report.innerText="إجمالي السنة: "+r.reduce((a,i)=>a+i.total,0);
+}
+
+/* ===== أرباح ===== */
+function profitDaily(){
+let d=new Date().toLocaleDateString();
+profitResult.innerText="ربح اليوم: "+
+invoices.filter(i=>i.date.includes(d)).reduce((a,i)=>a+(i.profit||0),0);
+}
+function profitMonthly(){
+let m=new Date().getMonth();
+profitResult.innerText="ربح الشهر: "+
+invoices.filter(i=>new Date(i.date).getMonth()===m).reduce((a,i)=>a+(i.profit||0),0);
+}
+function profitYearly(){
+let y=new Date().getFullYear();
+profitResult.innerText="ربح السنة: "+
+invoices.filter(i=>new Date(i.date).getFullYear()===y).reduce((a,i)=>a+(i.profit||0),0);
+}
+
+/* ===== نسخ احتياطي ===== */
+function backup(){
+let data={products,customers,invoices,invoiceNo};
+let a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([JSON.stringify(data)]));
+a.download="backup.json";
+a.click();
+}
+function restore(input){
+let r=new FileReader();
+r.onload=()=>{
+let d=JSON.parse(r.result);
+products=d.products||[];
+customers=d.customers||[];
+invoices=d.invoices||[];
+invoiceNo=d.invoiceNo||1;
+save();renderAll();
+alert("تم الاسترجاع");
+};
+r.readAsText(input.files[0]);
+}
+
+/* ===== حفظ ===== */
+function save(){
+localStorage.products=JSON.stringify(products);
+localStorage.customers=JSON.stringify(customers);
+localStorage.invoices=JSON.stringify(invoices);
+localStorage.invoiceNo=invoiceNo;
+}
+function renderAll(){
 renderProducts();
+renderProductTable();
+renderCustomers();
+}
+renderAll();
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+navigator.serviceWorker.register("sw.js");
+}
 </script>
 
 </body>
