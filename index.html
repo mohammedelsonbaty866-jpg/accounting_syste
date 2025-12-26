@@ -6,36 +6,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body{
-font-family:Tahoma,Arial;
-direction:rtl;
-margin:0;
-background:#f4f4f4
-}
-header{
-background:#000;
-color:#fff;
-padding:10px;
-text-align:center
-}
-nav button{
-width:33%;
-padding:10px;
-border:none;
-background:#eee
-}
+body{font-family:Tahoma,Arial;direction:rtl;margin:0;background:#f4f4f4}
+header{background:#000;color:#fff;padding:10px;text-align:center}
+nav button{width:33%;padding:10px;border:none;background:#eee}
 .container{padding:10px}
-.card{
-background:#fff;
-padding:10px;
-margin-bottom:10px;
-border-radius:5px
-}
-input,select,button{
-width:100%;
-padding:10px;
-margin:5px 0
-}
+.card{background:#fff;padding:10px;margin-bottom:10px;border-radius:5px}
+input,select,button{width:100%;padding:10px;margin:5px 0}
 button{background:#000;color:#fff;border:none}
 .hidden{display:none}
 table{width:100%;border-collapse:collapse}
@@ -43,26 +19,14 @@ th,td{border-bottom:1px solid #ddd;padding:5px;text-align:center}
 
 /* ===== فاتورة حرارية ===== */
 #printArea{
-width:80mm;
-background:#fff;
-color:#000;
-font-size:12px;
-padding:5px
+width:80mm;background:#fff;color:#000;
+font-size:12px;padding:5px
 }
-#printArea h3{
-text-align:center;
-margin:5px 0
-}
+#printArea h3{text-align:center;margin:5px 0}
 @media print{
 body *{visibility:hidden}
-#printArea, #printArea *{
-visibility:visible
-}
-#printArea{
-position:absolute;
-top:0;
-right:0
-}
+#printArea, #printArea *{visibility:visible}
+#printArea{position:absolute;top:0;right:0}
 }
 </style>
 </head>
@@ -81,8 +45,9 @@ right:0
 
 <!-- ===== الفاتورة ===== -->
 <div id="invoice" class="card">
-<select id="partner"></select>
+<div><b>رقم الفاتورة:</b> <span id="invoiceNo"></span></div>
 
+<select id="partner"></select>
 <input id="desc" placeholder="وصف العملية">
 <input id="amount" type="number" placeholder="المبلغ">
 
@@ -99,7 +64,6 @@ right:0
 <div id="partners" class="card hidden">
 <input id="partnerName" placeholder="اسم العميل / المورد">
 <button onclick="addPartner()">إضافة</button>
-
 <ul id="partnerList"></ul>
 </div>
 
@@ -112,7 +76,7 @@ right:0
 
 <!-- ===== الفاتورة الحرارية ===== -->
 <div id="printArea" class="hidden">
-<h3>فاتورة</h3>
+<h3>فاتورة رقم <span id="pNo"></span></h3>
 <div id="printContent"></div>
 <p style="text-align:center">شكراً لتعاملكم معنا</p>
 </div>
@@ -120,6 +84,9 @@ right:0
 <script>
 let partners = JSON.parse(localStorage.getItem("partners")) || [];
 let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+let invoiceCounter = Number(localStorage.getItem("invoiceCounter")) || 1;
+
+document.getElementById("invoiceNo").innerText = invoiceCounter;
 
 function show(id){
 ["invoice","partners","report"].forEach(x=>{
@@ -131,6 +98,7 @@ document.getElementById(id).classList.remove("hidden");
 function save(){
 localStorage.setItem("partners",JSON.stringify(partners));
 localStorage.setItem("invoices",JSON.stringify(invoices));
+localStorage.setItem("invoiceCounter",invoiceCounter);
 }
 
 function renderPartners(){
@@ -160,10 +128,16 @@ let d=desc.value;
 let a=amount.value;
 let t=type.value;
 if(p&&a){
-invoices.push({p,d,a,t,date:new Date().toLocaleString()});
+invoices.push({
+no: invoiceCounter,
+p, d, a, t,
+date: new Date().toLocaleString()
+});
+invoiceCounter++;
 save();
 alert("تم حفظ الفاتورة");
 desc.value=amount.value="";
+document.getElementById("invoiceNo").innerText = invoiceCounter;
 renderReport();
 }
 }
@@ -174,6 +148,7 @@ invoices.forEach(i=>{
 i.t==="income"?inc+=+i.a:exp+=+i.a;
 });
 summary.innerHTML=`
+عدد الفواتير: ${invoices.length}<br>
 إجمالي الإيرادات: ${inc}<br>
 إجمالي المصروفات: ${exp}<br>
 الصافي: ${inc-exp}
@@ -183,7 +158,9 @@ summary.innerHTML=`
 function printInvoice(){
 let last=invoices[invoices.length-1];
 if(!last){alert("لا توجد فاتورة");return;}
+document.getElementById("pNo").innerText = last.no;
 printContent.innerHTML=`
+رقم الفاتورة: ${last.no}<br>
 العميل/المورد: ${last.p}<br>
 الوصف: ${last.d}<br>
 المبلغ: ${last.a}<br>
