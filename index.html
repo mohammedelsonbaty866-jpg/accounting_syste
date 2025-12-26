@@ -3,216 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <title>برنامج محاسبي</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- أيقونات -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-<!-- PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-:root{
-  --main:#2c3e50;
-  --accent:#1abc9c;
-  --bg:#f4f6f8;
-  --card:#ffffff;
-  --danger:#e74c3c;
-}
-*{box-sizing:border-box}
 body{
-  margin:0;
-  font-family:Segoe UI,Arial;
-  direction:rtl;
-  background:var(--bg);
+font-family:Tahoma,Arial;
+direction:rtl;
+margin:0;
+background:#f4f4f4
 }
 header{
-  background:var(--main);
-  color:#fff;
-  padding:15px;
-  text-align:center;
-  font-size:18px;
-}
-nav{
-  display:flex;
-  background:#fff;
-  border-bottom:1px solid #ddd;
+background:#000;
+color:#fff;
+padding:10px;
+text-align:center
 }
 nav button{
-  flex:1;
-  padding:12px;
-  border:none;
-  background:none;
-  font-size:15px;
+width:33%;
+padding:10px;
+border:none;
+background:#eee
 }
-nav button:hover{background:#eee}
-.container{padding:12px}
+.container{padding:10px}
 .card{
-  background:var(--card);
-  border-radius:8px;
-  padding:12px;
-  margin-bottom:12px;
-  box-shadow:0 2px 6px rgba(0,0,0,.1);
+background:#fff;
+padding:10px;
+margin-bottom:10px;
+border-radius:5px
 }
 input,select,button{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border-radius:6px;
-  border:1px solid #ccc;
-  font-size:15px;
+width:100%;
+padding:10px;
+margin:5px 0
 }
-button.primary{background:var(--accent);color:#fff;border:none}
-button.danger{background:var(--danger);color:#fff;border:none}
-table{width:100%;border-collapse:collapse}
-th,td{padding:8px;border-bottom:1px solid #eee;text-align:center}
-th{background:#fafafa}
-.income{color:green;font-weight:bold}
-.expense{color:red;font-weight:bold}
-.report{padding:12px;text-align:center;border-radius:6px;margin-bottom:8px}
+button{background:#000;color:#fff;border:none}
 .hidden{display:none}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid #ddd;padding:5px;text-align:center}
+
+/* ===== فاتورة حرارية ===== */
+#printArea{
+width:80mm;
+background:#fff;
+color:#000;
+font-size:12px;
+padding:5px
+}
+#printArea h3{
+text-align:center;
+margin:5px 0
+}
+@media print{
+body *{visibility:hidden}
+#printArea, #printArea *{
+visibility:visible
+}
+#printArea{
+position:absolute;
+top:0;
+right:0
+}
+}
 </style>
 </head>
 
 <body>
 
-<header id="companyHeader">📊 برنامج محاسبي</header>
+<header>🧾 برنامج محاسبي + فواتير</header>
 
 <nav>
-  <button onclick="show('entries')"><i class="fa-solid fa-plus"></i> القيود</button>
-  <button onclick="show('report')"><i class="fa-solid fa-chart-line"></i> التقرير</button>
-  <button onclick="show('settings')"><i class="fa-solid fa-gear"></i> الإعدادات</button>
+<button onclick="show('invoice')">فاتورة</button>
+<button onclick="show('partners')">عملاء / موردين</button>
+<button onclick="show('report')">تقرير</button>
 </nav>
 
 <div class="container">
 
-<!-- القيود -->
-<div id="entries" class="card">
-  <input id="name" placeholder="البيان">
-  <input id="amount" type="number" placeholder="المبلغ">
-  <select id="type">
-    <option value="income">إيراد</option>
-    <option value="expense">مصروف</option>
-  </select>
+<!-- ===== الفاتورة ===== -->
+<div id="invoice" class="card">
+<select id="partner"></select>
 
-  <button class="primary" onclick="add()">
-    <i class="fa-solid fa-circle-plus"></i> إضافة
-  </button>
+<input id="desc" placeholder="وصف العملية">
+<input id="amount" type="number" placeholder="المبلغ">
 
-  <button class="danger" onclick="clearAll()">
-    <i class="fa-solid fa-trash"></i> مسح الكل
-  </button>
+<select id="type">
+<option value="income">إيراد</option>
+<option value="expense">مصروف</option>
+</select>
 
-  <br><br>
-
-  <table>
-    <thead>
-      <tr>
-        <th>البيان</th>
-        <th>النوع</th>
-        <th>المبلغ</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody id="data"></tbody>
-  </table>
+<button onclick="addInvoice()">حفظ الفاتورة</button>
+<button onclick="printInvoice()">🖨 طباعة حرارية</button>
 </div>
 
-<!-- التقرير -->
-<div id="report" class="hidden">
-  <div class="card report" id="totalIncome">💰 إجمالي الإيرادات: 0</div>
-  <div class="card report" id="totalExpense">💸 إجمالي المصروفات: 0</div>
-  <div class="card report" id="net">📊 الصافي: 0</div>
+<!-- ===== عملاء / موردين ===== -->
+<div id="partners" class="card hidden">
+<input id="partnerName" placeholder="اسم العميل / المورد">
+<button onclick="addPartner()">إضافة</button>
 
-  <button class="primary" onclick="downloadPDF()">
-    <i class="fa-solid fa-file-pdf"></i> تحميل تقرير PDF
-  </button>
+<ul id="partnerList"></ul>
 </div>
 
-<!-- الإعدادات -->
-<div id="settings" class="hidden card">
-  <input id="companyName" placeholder="اسم الشركة">
-  <button class="primary" onclick="saveCompany()">
-    <i class="fa-solid fa-save"></i> حفظ
-  </button>
+<!-- ===== التقرير ===== -->
+<div id="report" class="card hidden">
+<div id="summary"></div>
 </div>
 
+</div>
+
+<!-- ===== الفاتورة الحرارية ===== -->
+<div id="printArea" class="hidden">
+<h3>فاتورة</h3>
+<div id="printContent"></div>
+<p style="text-align:center">شكراً لتعاملكم معنا</p>
 </div>
 
 <script>
-let data = JSON.parse(localStorage.getItem("accounts")) || [];
-let COMPANY = localStorage.getItem("company") || "برنامج محاسبي";
-companyHeader.innerText="📊 "+COMPANY;
+let partners = JSON.parse(localStorage.getItem("partners")) || [];
+let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
 
 function show(id){
-["entries","report","settings"].forEach(x=>{
+["invoice","partners","report"].forEach(x=>{
 document.getElementById(x).classList.add("hidden");
 });
 document.getElementById(id).classList.remove("hidden");
 }
 
-function render(){
-let html="",inc=0,exp=0;
-data.forEach((i,n)=>{
-i.type==="income"?inc+=+i.amount:exp+=+i.amount;
-html+=`
-<tr>
-<td>${i.name}</td>
-<td class="${i.type}">${i.type==="income"?"إيراد":"مصروف"}</td>
-<td>${i.amount}</td>
-<td><button onclick="removeItem(${n})">❌</button></td>
-</tr>`;
+function save(){
+localStorage.setItem("partners",JSON.stringify(partners));
+localStorage.setItem("invoices",JSON.stringify(invoices));
+}
+
+function renderPartners(){
+let s=document.getElementById("partner");
+let ul=document.getElementById("partnerList");
+s.innerHTML="";
+ul.innerHTML="";
+partners.forEach(p=>{
+s.innerHTML+=`<option>${p}</option>`;
+ul.innerHTML+=`<li>${p}</li>`;
 });
-data.innerHTML=html;
-document.getElementById("data").innerHTML=html;
-totalIncome.innerText="💰 إجمالي الإيرادات: "+inc;
-totalExpense.innerText="💸 إجمالي المصروفات: "+exp;
-net.innerText="📊 الصافي: "+(inc-exp);
 }
 
-function add(){
-let n=name.value,a=amount.value,t=type.value;
-if(n&&a){
-data.push({name:n,amount:a,type:t});
-localStorage.setItem("accounts",JSON.stringify(data));
-name.value=amount.value="";
-render();
+function addPartner(){
+let n=partnerName.value;
+if(n){
+partners.push(n);
+partnerName.value="";
+save();
+renderPartners();
 }
 }
 
-function removeItem(i){
-data.splice(i,1);
-localStorage.setItem("accounts",JSON.stringify(data));
-render();
-}
-
-function clearAll(){
-if(confirm("مسح كل البيانات؟")){
-data=[];
-localStorage.removeItem("accounts");
-render();
-}
-}
-
-function saveCompany(){
-let c=companyName.value;
-if(c){
-localStorage.setItem("company",c);
-companyHeader.innerText="📊 "+c;
+function addInvoice(){
+let p=partner.value;
+let d=desc.value;
+let a=amount.value;
+let t=type.value;
+if(p&&a){
+invoices.push({p,d,a,t,date:new Date().toLocaleString()});
+save();
+alert("تم حفظ الفاتورة");
+desc.value=amount.value="";
+renderReport();
 }
 }
 
-function downloadPDF(){
-const { jsPDF } = window.jspdf;
-let doc=new jsPDF();
-doc.text(`تقرير ${COMPANY}`,10,10);
-doc.text(totalIncome.innerText,10,20);
-doc.text(totalExpense.innerText,10,30);
-doc.text(net.innerText,10,40);
-doc.save("report.pdf");
+function renderReport(){
+let inc=0,exp=0;
+invoices.forEach(i=>{
+i.t==="income"?inc+=+i.a:exp+=+i.a;
+});
+summary.innerHTML=`
+إجمالي الإيرادات: ${inc}<br>
+إجمالي المصروفات: ${exp}<br>
+الصافي: ${inc-exp}
+`;
 }
 
-render();
+function printInvoice(){
+let last=invoices[invoices.length-1];
+if(!last){alert("لا توجد فاتورة");return;}
+printContent.innerHTML=`
+العميل/المورد: ${last.p}<br>
+الوصف: ${last.d}<br>
+المبلغ: ${last.a}<br>
+النوع: ${last.t==="income"?"إيراد":"مصروف"}<br>
+التاريخ: ${last.date}
+`;
+printArea.classList.remove("hidden");
+window.print();
+printArea.classList.add("hidden");
+}
+
+renderPartners();
+renderReport();
 </script>
 
 </body>
