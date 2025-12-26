@@ -29,11 +29,19 @@
         }
         .income { color: green; }
         .expense { color: red; }
+        .box {
+            display: inline-block;
+            padding: 15px;
+            margin: 10px;
+            background: #fff;
+            border: 1px solid #000;
+            width: 250px;
+        }
     </style>
 </head>
 <body>
 
-<h2>📊 برنامج محاسبي (إيرادات ومصروفات)</h2>
+<h2>📊 برنامج محاسبي</h2>
 
 <input id="name" placeholder="البيان">
 <input id="amount" type="number" placeholder="المبلغ">
@@ -44,6 +52,12 @@
 </select>
 
 <button onclick="add()">إضافة</button>
+
+<br><br>
+
+<div class="box income" id="totalIncome">إجمالي الإيرادات: 0</div>
+<div class="box expense" id="totalExpense">إجمالي المصروفات: 0</div>
+<div class="box" id="net">الصافي: 0</div>
 
 <br><br>
 
@@ -59,18 +73,20 @@
     <tbody id="data"></tbody>
 </table>
 
-<h3 id="total"></h3>
-
 <script>
 let data = JSON.parse(localStorage.getItem("accounts")) || [];
 
 function render() {
     let table = "";
-    let total = 0;
+    let income = 0;
+    let expense = 0;
 
     data.forEach((item, index) => {
-        let sign = item.type === "income" ? 1 : -1;
-        total += sign * Number(item.amount);
+        if (item.type === "income") {
+            income += Number(item.amount);
+        } else {
+            expense += Number(item.amount);
+        }
 
         table += `
         <tr>
@@ -85,7 +101,9 @@ function render() {
     });
 
     document.getElementById("data").innerHTML = table;
-    document.getElementById("total").innerText = "الرصيد الحالي: " + total;
+    document.getElementById("totalIncome").innerText = "إجمالي الإيرادات: " + income;
+    document.getElementById("totalExpense").innerText = "إجمالي المصروفات: " + expense;
+    document.getElementById("net").innerText = "الصافي: " + (income - expense);
 }
 
 function add() {
