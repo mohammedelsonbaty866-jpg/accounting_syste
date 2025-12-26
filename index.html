@@ -2,334 +2,211 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>نظام محاسبي تجاري</title>
+<title>POS بقالة</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <style>
-:root{
---main:#0f172a;
---accent:#2563eb;
---success:#16a34a;
---danger:#dc2626;
---bg:#f1f5f9;
---card:#ffffff;
-}
-
-body{
-margin:0;
-font-family:Tahoma,Arial;
-direction:rtl;
-background:var(--bg);
-}
-
-header{
-background:#0f172a;
-color:#fff;
-padding:15px;
-text-align:center;
-}
-
-nav{
-display:flex;
-background:#fff;
-border-bottom:1px solid #ddd;
-}
-nav button{
-flex:1;
-padding:12px;
-border:none;
-background:none;
-font-size:13px;
-}
-nav button:hover{background:#f1f5f9}
-
-.container{padding:12px}
-
-.card{
-background:var(--card);
-padding:14px;
-margin-bottom:12px;
-border-radius:10px;
-box-shadow:0 4px 10px rgba(0,0,0,.08);
-}
-
-input,select{
-width:100%;
-padding:10px;
-margin:6px 0;
-border-radius:6px;
-border:1px solid #ccc;
-}
-
-button{
-width:100%;
-padding:12px;
-margin-top:6px;
-border:none;
-border-radius:6px;
-font-size:14px;
-cursor:pointer;
-}
-
-.btn-main{background:var(--accent);color:#fff}
-.btn-success{background:var(--success);color:#fff}
-.btn-danger{background:var(--danger);color:#fff}
-
+body{margin:0;font-family:Tahoma;direction:rtl;background:#f3f4f6}
+header{background:#0f172a;color:#fff;padding:10px;text-align:center}
+.container{padding:10px}
+.card{background:#fff;padding:10px;margin-bottom:10px;border-radius:10px}
+input,select,button{width:100%;padding:10px;margin:5px 0}
+button{border:none;border-radius:6px}
+.btn{background:#2563eb;color:#fff}
+.btn-success{background:#16a34a;color:#fff}
+.btn-danger{background:#dc2626;color:#fff}
+.btn-warning{background:#f59e0b;color:#fff}
 .hidden{display:none}
-
-/* ===== فاتورة حرارية ===== */
-#printArea{
-width:80mm;
-font-size:12px;
-padding:5px;
-}
-#printArea h3{
-text-align:center;
-margin:4px 0;
-}
-#printArea table{
-width:100%;
-border-collapse:collapse;
-}
-#printArea th,#printArea td{
-border-bottom:1px dashed #000;
-padding:3px;
-text-align:center;
-}
-@media print{
-body *{visibility:hidden}
-#printArea, #printArea *{visibility:visible}
-#printArea{position:absolute;top:0;right:0}
-}
+.locked{color:red;font-weight:bold}
 </style>
 </head>
 
 <body>
 
-<!-- ===== تسجيل الدخول ===== -->
-<div id="loginBox" class="container">
-<div class="card">
-<h3>🔐 تسجيل الدخول</h3>
-<input id="loginUser" placeholder="اسم المستخدم">
-<input id="loginPass" type="password" placeholder="كلمة المرور">
-<button class="btn-main" onclick="login()">دخول</button>
-</div>
-</div>
-
-<!-- ===== التطبيق ===== -->
-<div id="app" class="hidden">
-
 <header>
-<h3>نظام محاسبي تجاري</h3>
-<small id="currentUser"></small>
+<h3>🛒 نظام بقالة</h3>
 </header>
-
-<nav>
-<button onclick="show('invoice')">🧾 فاتورة</button>
-<button onclick="show('products')">📦 أصناف</button>
-<button onclick="show('users')">👤 مستخدمين</button>
-<button onclick="logout()">🚪 خروج</button>
-</nav>
 
 <div class="container">
 
-<!-- ===== فاتورة ===== -->
-<div id="invoice" class="card">
+<!-- بيع -->
+<div class="card">
+<input id="search" placeholder="بحث / باركود">
 <select id="productSelect"></select>
-<input id="qty" type="number" value="1" placeholder="الكمية">
+<input id="qty" type="number" value="1" min="1">
 <button class="btn-success" onclick="addItem()">إضافة</button>
+</div>
+
+<!-- فاتورة -->
+<div class="card">
+<div id="items"></div>
+<b id="total">الإجمالي: 0</b>
+
+<select id="payType" onchange="payChange()">
+<option value="cash">نقدي</option>
+<option value="credit">آجل</option>
+</select>
+
+<select id="customer" class="hidden"></select>
+<button class="btn" onclick="saveInvoice()">حفظ</button>
+</div>
+
+<!-- عملاء -->
+<div class="card">
+<h4>👤 العملاء الآجل</h4>
+<input id="custName" placeholder="اسم العميل">
+<button class="btn" onclick="addCustomer()">إضافة عميل</button>
+
+<select id="custList" onchange="showStatement()"></select>
+<div id="statement"></div>
 
 <hr>
-<div id="invoiceItems"></div>
-<b id="invoiceTotal">الإجمالي: 0</b>
 
-<button class="btn-main" onclick="saveInvoice()">حفظ الفاتورة</button>
-<button class="btn-success" onclick="printInvoice()">🖨 طباعة</button>
-</div>
+<h4>💳 تسديد مديونية</h4>
+<input id="payAmount" type="number" placeholder="مبلغ السداد">
+<button class="btn-success" onclick="payDebt()">تسديد</button>
 
-<!-- ===== أصناف ===== -->
-<div id="products" class="card hidden">
-<h3>📦 الأصناف</h3>
-<input id="productName" placeholder="اسم الصنف">
-<input id="productPrice" type="number" placeholder="السعر">
-<button class="btn-main" onclick="addProduct()">إضافة صنف</button>
-<ul id="productList"></ul>
-</div>
-
-<!-- ===== مستخدمين ===== -->
-<div id="users" class="card hidden">
-<h3>👤 المستخدمين</h3>
-<input id="newUser" placeholder="اسم المستخدم">
-<input id="newPass" placeholder="كلمة المرور">
-<button class="btn-main" onclick="addUser()">إضافة مستخدم</button>
-<ul id="userList"></ul>
-</div>
-
-</div>
-</div>
-
-<!-- ===== الطباعة ===== -->
-<div id="printArea" class="hidden">
-<h3>🧾 فاتورة بيع</h3>
-<div id="printMeta"></div>
-<table>
-<thead>
-<tr><th>الصنف</th><th>ك</th><th>السعر</th></tr>
-</thead>
-<tbody id="printItems"></tbody>
-</table>
 <hr>
-<b id="printTotal"></b>
-<p style="text-align:center">شكراً لزيارتكم</p>
+
+<h4>🔒 قفل / فتح الحساب</h4>
+<button class="btn-warning" onclick="toggleLock()">قفل / فتح</button>
+</div>
+
 </div>
 
 <script>
 /* ===== بيانات ===== */
-let users = JSON.parse(localStorage.getItem("users")) || [{u:"admin",p:"1234"}];
-let products = JSON.parse(localStorage.getItem("products")) || [];
+let products = JSON.parse(localStorage.getItem("products")) || [
+ {n:"سكر",p:15,s:50,c:"111"},
+ {n:"زيت",p:70,s:30,c:"222"}
+];
+let customers = JSON.parse(localStorage.getItem("customers")) || [];
 let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
 let cart = [];
-let loggedUser = localStorage.getItem("loggedUser");
 
-/* ===== عند التحميل ===== */
-if(loggedUser){
-showApp(loggedUser);
-}
+/* ===== بحث ===== */
+search.oninput = () => {
+ productSelect.innerHTML="";
+ let v = search.value.trim();
+ products.forEach((p,i)=>{
+  if(p.c===v || p.n.includes(v)){
+   productSelect.innerHTML += `<option value="${i}">${p.n} (متوفر ${p.s})</option>`;
+  }
+ });
+};
 
-/* ===== تسجيل دخول ===== */
-function login(){
-let u = loginUser.value;
-let p = loginPass.value;
-let ok = users.find(x => x.u === u && x.p === p);
-if(ok){
-localStorage.setItem("loggedUser",u);
-showApp(u);
-}else{
-alert("بيانات الدخول غير صحيحة");
-}
-}
-
-function showApp(user){
-loginBox.classList.add("hidden");
-app.classList.remove("hidden");
-currentUser.innerText="المستخدم: "+user;
-renderProducts();
-renderUsers();
-}
-
-/* ===== خروج ===== */
-function logout(){
-localStorage.removeItem("loggedUser");
-location.reload();
-}
-
-/* ===== تنقل ===== */
-function show(id){
-["invoice","products","users"].forEach(x=>{
-document.getElementById(x).classList.add("hidden");
-});
-document.getElementById(id).classList.remove("hidden");
-}
-
-/* ===== أصناف ===== */
-function addProduct(){
-if(productName.value && productPrice.value){
-products.push({n:productName.value,p:+productPrice.value});
-productName.value=productPrice.value="";
-save();
-renderProducts();
-}
-}
-
-function renderProducts(){
-productSelect.innerHTML="";
-productList.innerHTML="";
-products.forEach((p,i)=>{
-productSelect.innerHTML+=`<option value="${i}">${p.n} - ${p.p}</option>`;
-productList.innerHTML+=`<li>${p.n} - ${p.p}</li>`;
-});
-}
-
-/* ===== فاتورة ===== */
+/* ===== إضافة صنف ===== */
 function addItem(){
-let p = products[productSelect.value];
-let q = +qty.value;
-cart.push({n:p.n,p:p.p,q});
-renderCart();
+ let idx = productSelect.value;
+ if(idx==="" ) return;
+ let p = products[idx];
+ let q = +qty.value;
+ if(q<=0 || q>p.s){ alert("كمية غير متاحة"); return; }
+ cart.push({n:p.n,p:p.p,q});
+ render();
 }
 
-function renderCart(){
-let t=0;
-invoiceItems.innerHTML="";
-cart.forEach(i=>{
-let s=i.p*i.q;
-t+=s;
-invoiceItems.innerHTML+=`${i.n} × ${i.q} = ${s}<br>`;
-});
-invoiceTotal.innerText="الإجمالي: "+t;
+/* ===== عرض ===== */
+function render(){
+ let t=0;
+ items.innerHTML="";
+ cart.forEach(i=>{
+  t+=i.p*i.q;
+  items.innerHTML+=`${i.n} × ${i.q} = ${i.p*i.q}<br>`;
+ });
+ total.innerText="الإجمالي: "+t;
 }
 
+/* ===== نوع الدفع ===== */
+function payChange(){
+ customer.classList.toggle("hidden", payType.value!=="credit");
+ if(payType.value==="credit") loadCustomers(true);
+}
+
+/* ===== حفظ فاتورة ===== */
 function saveInvoice(){
-invoices.push({
-user:localStorage.getItem("loggedUser"),
-items:cart,
-total:cart.reduce((a,i)=>a+i.p*i.q,0),
-date:new Date().toLocaleString()
-});
-cart=[];
-save();
-renderCart();
-alert("تم حفظ الفاتورة");
+ if(cart.length===0) return;
+ let t = cart.reduce((a,i)=>a+i.p*i.q,0);
+ let today = new Date().toLocaleDateString();
+
+ if(payType.value==="credit"){
+  if(customer.value===""){ alert("اختر عميل"); return; }
+  let c = customers[customer.value];
+  if(c.locked){ alert("الحساب مقفول"); return; }
+  c.ops.push({date:today,type:"بيع",total:t});
+  c.balance += t;
+ }
+
+ cart.forEach(i=>{
+  let p = products.find(x=>x.n===i.n);
+  p.s -= i.q;
+ });
+
+ invoices.push({date:today,total:t,type:payType.value});
+ saveAll();
+ cart=[];
+ render();
 }
 
-/* ===== مستخدمين ===== */
-function addUser(){
-if(newUser.value && newPass.value){
-users.push({u:newUser.value,p:newPass.value});
-newUser.value=newPass.value="";
-save();
-renderUsers();
-}
+/* ===== عملاء ===== */
+function addCustomer(){
+ if(!custName.value) return;
+ customers.push({n:custName.value,balance:0,ops:[],locked:false});
+ custName.value="";
+ saveCustomers();
 }
 
-function renderUsers(){
-userList.innerHTML="";
-users.forEach(u=>{
-userList.innerHTML+=`<li>${u.u}</li>`;
-});
+function loadCustomers(forSale=false){
+ customer.innerHTML="";
+ custList.innerHTML="";
+ customers.forEach((c,i)=>{
+  if(!forSale || !c.locked)
+   customer.innerHTML+=`<option value="${i}">${c.n}</option>`;
+  custList.innerHTML+=`<option value="${i}">${c.n}</option>`;
+ });
 }
 
-/* ===== طباعة ===== */
-function printInvoice(){
-let last=invoices[invoices.length-1];
-if(!last){alert("لا توجد فاتورة");return;}
+function showStatement(){
+ let c = customers[custList.value];
+ if(!c) return;
+ let html=`<b>${c.n}</b><br>`;
+ html+=`الحالة: ${c.locked?'<span class="locked">مقفول</span>':'مفتوح'}<br>`;
+ html+=`الرصيد: ${c.balance}<br><hr>`;
+ c.ops.forEach(o=>{
+  html+=`${o.date} - ${o.type} : ${o.total}<br>`;
+ });
+ statement.innerHTML=html;
+}
 
-printMeta.innerHTML=`
-التاريخ: ${last.date}<br>
-المستخدم: ${last.user}
-`;
+/* ===== سداد ===== */
+function payDebt(){
+ let amt = +payAmount.value;
+ let c = customers[custList.value];
+ if(!c || amt<=0 || amt>c.balance){ alert("مبلغ غير صحيح"); return; }
+ c.balance -= amt;
+ c.ops.push({date:new Date().toLocaleDateString(),type:"سداد",total:-amt});
+ payAmount.value="";
+ saveCustomers();
+ showStatement();
+}
 
-printItems.innerHTML="";
-last.items.forEach(i=>{
-printItems.innerHTML+=`
-<tr>
-<td>${i.n}</td>
-<td>${i.q}</td>
-<td>${i.p*i.q}</td>
-</tr>`;
-});
-printTotal.innerText="الإجمالي: "+last.total;
-
-printArea.classList.remove("hidden");
-window.print();
-printArea.classList.add("hidden");
+/* ===== قفل ===== */
+function toggleLock(){
+ let c = customers[custList.value];
+ if(!c) return;
+ c.locked = !c.locked;
+ saveCustomers();
+ showStatement();
 }
 
 /* ===== حفظ ===== */
-function save(){
-localStorage.setItem("users",JSON.stringify(users));
-localStorage.setItem("products",JSON.stringify(products));
-localStorage.setItem("invoices",JSON.stringify(invoices));
+function saveCustomers(){
+ localStorage.setItem("customers", JSON.stringify(customers));
+ loadCustomers();
+}
+function saveAll(){
+ localStorage.setItem("products", JSON.stringify(products));
+ localStorage.setItem("customers", JSON.stringify(customers));
+ localStorage.setItem("invoices", JSON.stringify(invoices));
 }
 </script>
 
