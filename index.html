@@ -3,182 +3,247 @@
 <head>
 <meta charset="UTF-8">
 <title>برنامج محاسبي</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <style>
-body{font-family:Arial;direction:rtl;background:#f0f0f0;margin:0}
-header{background:#222;color:#fff;padding:15px;text-align:center}
-.container{padding:10px}
-input,select,button{padding:10px;margin:5px;width:95%}
-table{width:100%;border-collapse:collapse;background:#fff}
-th,td{border:1px solid #000;padding:8px;text-align:center}
-th{background:#ddd}
-.income{color:green}
-.expense{color:red}
-.box{background:#fff;padding:10px;margin:5px 0;border:1px solid #000}
+:root{
+  --main:#2c3e50;
+  --accent:#1abc9c;
+  --bg:#f4f6f8;
+  --card:#ffffff;
+  --danger:#e74c3c;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family: "Segoe UI", Tahoma, Arial;
+  direction: rtl;
+  background: var(--bg);
+}
+
+/* ===== Header ===== */
+header{
+  background: var(--main);
+  color:#fff;
+  padding:15px;
+  text-align:center;
+  font-size:18px;
+}
+
+/* ===== Navigation ===== */
+nav{
+  display:flex;
+  justify-content:space-around;
+  background:#fff;
+  border-bottom:1px solid #ddd;
+}
+nav button{
+  flex:1;
+  padding:12px;
+  border:none;
+  background:none;
+  font-size:15px;
+}
+nav button:hover{
+  background:var(--bg);
+}
+
+/* ===== Layout ===== */
+.container{
+  padding:12px;
+}
+.card{
+  background:var(--card);
+  border-radius:8px;
+  padding:12px;
+  margin-bottom:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+/* ===== Inputs ===== */
+input,select,button{
+  width:100%;
+  padding:12px;
+  margin:6px 0;
+  border-radius:6px;
+  border:1px solid #ccc;
+  font-size:15px;
+}
+
+button.primary{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+}
+button.danger{
+  background:var(--danger);
+  color:#fff;
+  border:none;
+}
+
+/* ===== Table ===== */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th,td{
+  padding:8px;
+  border-bottom:1px solid #eee;
+  text-align:center;
+}
+th{
+  background:#fafafa;
+}
+.income{color:green;font-weight:bold}
+.expense{color:red;font-weight:bold}
+
+/* ===== Report ===== */
+.report-box{
+  text-align:center;
+  padding:10px;
+  border-radius:6px;
+  margin-bottom:8px;
+}
+.report-income{background:#eafaf1;color:#27ae60}
+.report-expense{background:#fdecea;color:#c0392b}
+.report-net{background:#ecf0f1;font-weight:bold}
+
+/* ===== Utils ===== */
 .hidden{display:none}
-nav button{padding:10px;margin:5px;width:30%}
 </style>
 </head>
+
 <body>
-
-<!-- تسجيل الدخول -->
-<div id="login">
-<header>🔐 تسجيل الدخول</header>
-<div class="container">
-<input id="password" type="password" placeholder="كلمة المرور">
-<button onclick="login()">دخول</button>
-</div>
-</div>
-
-<!-- التطبيق -->
-<div id="app" class="hidden">
 
 <header id="companyHeader">📊 برنامج محاسبي</header>
 
-<nav class="container">
-<button onclick="show('entries')">القيود</button>
-<button onclick="show('report')">التقرير</button>
-<button onclick="show('settings')">الإعدادات</button>
+<nav>
+  <button onclick="show('entries')">➕ القيود</button>
+  <button onclick="show('report')">📈 التقرير</button>
+  <button onclick="show('settings')">⚙️ الإعدادات</button>
 </nav>
 
 <div class="container">
 
-<!-- القيود -->
-<div id="entries">
-<input id="name" placeholder="البيان">
-<input id="amount" type="number" placeholder="المبلغ">
-<select id="type">
-<option value="income">إيراد</option>
-<option value="expense">مصروف</option>
-</select>
-<button onclick="add()">إضافة</button>
-<button onclick="clearAll()">🗑 مسح الكل</button>
+<!-- ===== القيود ===== -->
+<div id="entries" class="card">
+  <input id="name" placeholder="البيان">
+  <input id="amount" type="number" placeholder="المبلغ">
+  <select id="type">
+    <option value="income">إيراد</option>
+    <option value="expense">مصروف</option>
+  </select>
 
-<table>
-<thead>
-<tr><th>البيان</th><th>النوع</th><th>المبلغ</th><th>حذف</th></tr>
-</thead>
-<tbody id="data"></tbody>
-</table>
+  <button class="primary" onclick="add()">إضافة</button>
+  <button class="danger" onclick="clearAll()">مسح الكل</button>
+
+  <br><br>
+
+  <table>
+    <thead>
+      <tr>
+        <th>البيان</th>
+        <th>النوع</th>
+        <th>المبلغ</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="data"></tbody>
+  </table>
 </div>
 
-<!-- التقرير -->
+<!-- ===== التقرير ===== -->
 <div id="report" class="hidden">
-<div class="box income" id="totalIncome">إجمالي الإيرادات: 0</div>
-<div class="box expense" id="totalExpense">إجمالي المصروفات: 0</div>
-<div class="box" id="net">الصافي: 0</div>
+  <div class="card report-box report-income" id="totalIncome">
+    إجمالي الإيرادات: 0
+  </div>
+  <div class="card report-box report-expense" id="totalExpense">
+    إجمالي المصروفات: 0
+  </div>
+  <div class="card report-box report-net" id="net">
+    الصافي: 0
+  </div>
 </div>
 
-<!-- الإعدادات -->
-<div id="settings" class="hidden">
-<input id="companyName" placeholder="اسم الشركة">
-<button onclick="saveCompany()">💾 حفظ اسم الشركة</button>
-<hr>
-<input id="newPass" type="password" placeholder="كلمة مرور جديدة">
-<button onclick="changePassword()">🔑 تغيير كلمة المرور</button>
-<hr>
-<button onclick="logout()">🚪 تسجيل خروج</button>
+<!-- ===== الإعدادات ===== -->
+<div id="settings" class="hidden card">
+  <input id="companyName" placeholder="اسم الشركة">
+  <button class="primary" onclick="saveCompany()">حفظ اسم الشركة</button>
 </div>
 
-</div>
 </div>
 
 <script>
-// ===== الإعدادات =====
-let PASSWORD = localStorage.getItem("password") || "1234";
+/* ===== بيانات ===== */
+let data = JSON.parse(localStorage.getItem("accounts")) || [];
 let COMPANY = localStorage.getItem("company") || "برنامج محاسبي";
 document.getElementById("companyHeader").innerText = "📊 " + COMPANY;
 
-// ===== دخول =====
-function login(){
-if(document.getElementById("password").value === PASSWORD){
-localStorage.setItem("logged","yes");
-showApp();
-}else alert("كلمة المرور غير صحيحة");
-}
-
-function showApp(){
-document.getElementById("login").classList.add("hidden");
-document.getElementById("app").classList.remove("hidden");
-}
-
-if(localStorage.getItem("logged")==="yes") showApp();
-
-// ===== تنقل =====
+/* ===== تنقل ===== */
 function show(id){
-["entries","report","settings"].forEach(x=>{
-document.getElementById(x).classList.add("hidden");
-});
-document.getElementById(id).classList.remove("hidden");
+  ["entries","report","settings"].forEach(x=>{
+    document.getElementById(x).classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
 }
 
-// ===== محاسبة =====
-let data = JSON.parse(localStorage.getItem("accounts")) || [];
-
+/* ===== عرض ===== */
 function render(){
-let t="",inc=0,exp=0;
-data.forEach((i,n)=>{
-i.type==="income"?inc+=+i.amount:exp+=+i.amount;
-t+=`<tr>
-<td>${i.name}</td>
-<td class="${i.type}">${i.type==="income"?"إيراد":"مصروف"}</td>
-<td>${i.amount}</td>
-<td><button onclick="removeItem(${n})">❌</button></td>
-</tr>`;
-});
-data.length?null:null;
-document.getElementById("data").innerHTML=t;
-document.getElementById("totalIncome").innerText="إجمالي الإيرادات: "+inc;
-document.getElementById("totalExpense").innerText="إجمالي المصروفات: "+exp;
-document.getElementById("net").innerText="الصافي: "+(inc-exp);
+  let html="", inc=0, exp=0;
+  data.forEach((i,n)=>{
+    i.type==="income"?inc+=+i.amount:exp+=+i.amount;
+    html+=`
+    <tr>
+      <td>${i.name}</td>
+      <td class="${i.type}">${i.type==="income"?"إيراد":"مصروف"}</td>
+      <td>${i.amount}</td>
+      <td><button onclick="removeItem(${n})">❌</button></td>
+    </tr>`;
+  });
+  document.getElementById("data").innerHTML=html;
+  document.getElementById("totalIncome").innerText="إجمالي الإيرادات: "+inc;
+  document.getElementById("totalExpense").innerText="إجمالي المصروفات: "+exp;
+  document.getElementById("net").innerText="الصافي: "+(inc-exp);
 }
 
+/* ===== إضافة ===== */
 function add(){
-let n=name.value,a=amount.value,t=type.value;
-if(n&&a){
-data.push({name:n,amount:a,type:t});
-localStorage.setItem("accounts",JSON.stringify(data));
-name.value=amount.value="";
-render();
-}
+  let n=document.getElementById("name").value;
+  let a=document.getElementById("amount").value;
+  let t=document.getElementById("type").value;
+  if(n && a){
+    data.push({name:n,amount:a,type:t});
+    localStorage.setItem("accounts",JSON.stringify(data));
+    name.value=amount.value="";
+    render();
+  }
 }
 
+/* ===== حذف ===== */
 function removeItem(i){
-data.splice(i,1);
-localStorage.setItem("accounts",JSON.stringify(data));
-render();
+  data.splice(i,1);
+  localStorage.setItem("accounts",JSON.stringify(data));
+  render();
 }
 
 function clearAll(){
-if(confirm("مسح كل البيانات؟")){
-data=[];
-localStorage.removeItem("accounts");
-render();
-}
+  if(confirm("هل أنت متأكد؟")){
+    data=[];
+    localStorage.removeItem("accounts");
+    render();
+  }
 }
 
-// ===== إعدادات =====
+/* ===== إعدادات ===== */
 function saveCompany(){
-let c=companyName.value;
-if(c){
-localStorage.setItem("company",c);
-companyHeader.innerText="📊 "+c;
-alert("تم الحفظ");
-}
-}
-
-function changePassword(){
-let p=newPass.value;
-if(p){
-localStorage.setItem("password",p);
-PASSWORD=p;
-alert("تم تغيير كلمة المرور");
-newPass.value="";
-}
-}
-
-function logout(){
-localStorage.removeItem("logged");
-location.reload();
+  let c=companyName.value;
+  if(c){
+    localStorage.setItem("company",c);
+    companyHeader.innerText="📊 "+c;
+    alert("تم الحفظ");
+  }
 }
 
 render();
