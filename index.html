@@ -9,8 +9,8 @@
 :root{
 --main:#0f172a;
 --accent:#2563eb;
---success:#22c55e;
---danger:#ef4444;
+--success:#16a34a;
+--danger:#dc2626;
 --bg:#f1f5f9;
 --card:#ffffff;
 }
@@ -23,7 +23,7 @@ background:var(--bg);
 }
 
 header{
-background:linear-gradient(90deg,#0f172a,#1e293b);
+background:#0f172a;
 color:#fff;
 padding:15px;
 text-align:center;
@@ -39,7 +39,7 @@ flex:1;
 padding:12px;
 border:none;
 background:none;
-font-size:14px;
+font-size:13px;
 }
 nav button:hover{background:#f1f5f9}
 
@@ -77,8 +77,25 @@ cursor:pointer;
 
 .hidden{display:none}
 
-/* طباعة حرارية */
-#printArea{width:80mm;font-size:12px}
+/* ===== فاتورة حرارية ===== */
+#printArea{
+width:80mm;
+font-size:12px;
+padding:5px;
+}
+#printArea h3{
+text-align:center;
+margin:4px 0;
+}
+#printArea table{
+width:100%;
+border-collapse:collapse;
+}
+#printArea th,#printArea td{
+border-bottom:1px dashed #000;
+padding:3px;
+text-align:center;
+}
 @media print{
 body *{visibility:hidden}
 #printArea, #printArea *{visibility:visible}
@@ -90,7 +107,7 @@ body *{visibility:hidden}
 <body>
 
 <!-- ===== تسجيل الدخول ===== -->
-<div id="login" class="container">
+<div id="loginBox" class="container">
 <div class="card">
 <h3>🔐 تسجيل الدخول</h3>
 <input id="loginUser" placeholder="اسم المستخدم">
@@ -108,35 +125,25 @@ body *{visibility:hidden}
 </header>
 
 <nav>
-<button onclick="show('dashboard')">📊</button>
-<button onclick="show('invoice')">🧾</button>
-<button onclick="show('products')">📦</button>
-<button onclick="show('users')">👤</button>
-<button onclick="logout()">🚪</button>
+<button onclick="show('invoice')">🧾 فاتورة</button>
+<button onclick="show('products')">📦 أصناف</button>
+<button onclick="show('users')">👤 مستخدمين</button>
+<button onclick="logout()">🚪 خروج</button>
 </nav>
 
 <div class="container">
 
-<!-- ===== Dashboard ===== -->
-<div id="dashboard" class="card">
-<h3>لوحة التحكم</h3>
-<div id="stats"></div>
-</div>
-
 <!-- ===== فاتورة ===== -->
-<div id="invoice" class="card hidden">
-<b>فاتورة جديدة</b>
-
+<div id="invoice" class="card">
 <select id="productSelect"></select>
-<input id="qty" type="number" placeholder="الكمية" value="1">
-
-<button class="btn-success" onclick="addItem()">إضافة للفاتورة</button>
+<input id="qty" type="number" value="1" placeholder="الكمية">
+<button class="btn-success" onclick="addItem()">إضافة</button>
 
 <hr>
 <div id="invoiceItems"></div>
 <b id="invoiceTotal">الإجمالي: 0</b>
 
-<button class="btn-main" onclick="saveInvoice()">حفظ</button>
+<button class="btn-main" onclick="saveInvoice()">حفظ الفاتورة</button>
 <button class="btn-success" onclick="printInvoice()">🖨 طباعة</button>
 </div>
 
@@ -161,41 +168,54 @@ body *{visibility:hidden}
 </div>
 </div>
 
-<!-- ===== طباعة ===== -->
+<!-- ===== الطباعة ===== -->
 <div id="printArea" class="hidden">
-<h3>فاتورة</h3>
-<div id="printContent"></div>
+<h3>🧾 فاتورة بيع</h3>
+<div id="printMeta"></div>
+<table>
+<thead>
+<tr><th>الصنف</th><th>ك</th><th>السعر</th></tr>
+</thead>
+<tbody id="printItems"></tbody>
+</table>
+<hr>
+<b id="printTotal"></b>
 <p style="text-align:center">شكراً لزيارتكم</p>
 </div>
 
 <script>
 /* ===== بيانات ===== */
-let users = JSON.parse(localStorage.getItem("users")) || [
-{u:"admin",p:"1234"}
-];
+let users = JSON.parse(localStorage.getItem("users")) || [{u:"admin",p:"1234"}];
 let products = JSON.parse(localStorage.getItem("products")) || [];
 let invoices = JSON.parse(localStorage.getItem("invoices")) || [];
 let cart = [];
 let loggedUser = localStorage.getItem("loggedUser");
 
-/* ===== دخول ===== */
+/* ===== عند التحميل ===== */
+if(loggedUser){
+showApp(loggedUser);
+}
+
+/* ===== تسجيل دخول ===== */
 function login(){
-let u=loginUser.value,p=loginPass.value;
-let ok=users.find(x=>x.u===u && x.p===p);
+let u = loginUser.value;
+let p = loginPass.value;
+let ok = users.find(x => x.u === u && x.p === p);
 if(ok){
 localStorage.setItem("loggedUser",u);
-showApp();
-}else alert("بيانات غير صحيحة");
+showApp(u);
+}else{
+alert("بيانات الدخول غير صحيحة");
+}
 }
 
-function showApp(){
-login.classList.add("hidden");
+function showApp(user){
+loginBox.classList.add("hidden");
 app.classList.remove("hidden");
-currentUser.innerText="المستخدم: "+localStorage.getItem("loggedUser");
-renderAll();
+currentUser.innerText="المستخدم: "+user;
+renderProducts();
+renderUsers();
 }
-
-if(loggedUser) showApp();
 
 /* ===== خروج ===== */
 function logout(){
@@ -205,7 +225,7 @@ location.reload();
 
 /* ===== تنقل ===== */
 function show(id){
-["dashboard","invoice","products","users"].forEach(x=>{
+["invoice","products","users"].forEach(x=>{
 document.getElementById(x).classList.add("hidden");
 });
 document.getElementById(id).classList.remove("hidden");
@@ -232,8 +252,8 @@ productList.innerHTML+=`<li>${p.n} - ${p.p}</li>`;
 
 /* ===== فاتورة ===== */
 function addItem(){
-let p=products[productSelect.value];
-let q=+qty.value;
+let p = products[productSelect.value];
+let q = +qty.value;
 cart.push({n:p.n,p:p.p,q});
 renderCart();
 }
@@ -244,17 +264,21 @@ invoiceItems.innerHTML="";
 cart.forEach(i=>{
 let s=i.p*i.q;
 t+=s;
-invoiceItems.innerHTML+=`${i.n} x${i.q} = ${s}<br>`;
+invoiceItems.innerHTML+=`${i.n} × ${i.q} = ${s}<br>`;
 });
 invoiceTotal.innerText="الإجمالي: "+t;
 }
 
 function saveInvoice(){
-invoices.push({user:loggedUser,items:cart,date:new Date().toLocaleString()});
+invoices.push({
+user:localStorage.getItem("loggedUser"),
+items:cart,
+total:cart.reduce((a,i)=>a+i.p*i.q,0),
+date:new Date().toLocaleString()
+});
 cart=[];
 save();
 renderCart();
-renderStats();
 alert("تم حفظ الفاتورة");
 }
 
@@ -275,23 +299,27 @@ userList.innerHTML+=`<li>${u.u}</li>`;
 });
 }
 
-/* ===== إحصائيات ===== */
-function renderStats(){
-stats.innerHTML=`
-عدد الفواتير: ${invoices.length}<br>
-عدد الأصناف: ${products.length}<br>
-عدد المستخدمين: ${users.length}
-`;
-}
-
 /* ===== طباعة ===== */
 function printInvoice(){
 let last=invoices[invoices.length-1];
-let html="";
+if(!last){alert("لا توجد فاتورة");return;}
+
+printMeta.innerHTML=`
+التاريخ: ${last.date}<br>
+المستخدم: ${last.user}
+`;
+
+printItems.innerHTML="";
 last.items.forEach(i=>{
-html+=`${i.n} x${i.q} = ${i.p*i.q}<br>`;
+printItems.innerHTML+=`
+<tr>
+<td>${i.n}</td>
+<td>${i.q}</td>
+<td>${i.p*i.q}</td>
+</tr>`;
 });
-printContent.innerHTML=html;
+printTotal.innerText="الإجمالي: "+last.total;
+
 printArea.classList.remove("hidden");
 window.print();
 printArea.classList.add("hidden");
@@ -302,13 +330,6 @@ function save(){
 localStorage.setItem("users",JSON.stringify(users));
 localStorage.setItem("products",JSON.stringify(products));
 localStorage.setItem("invoices",JSON.stringify(invoices));
-}
-
-/* ===== تشغيل ===== */
-function renderAll(){
-renderProducts();
-renderUsers();
-renderStats();
 }
 </script>
 
